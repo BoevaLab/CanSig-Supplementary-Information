@@ -1,0 +1,5 @@
+[submodule "benchmark/CanSig"]
+	path = benchmark/CanSig
+	url = https://github.com/BoevaLab/CanSig/
+	branch = integration_model
+
