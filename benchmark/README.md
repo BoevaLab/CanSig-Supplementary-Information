@@ -14,3 +14,11 @@ $ pip install scib
 $ pip install -e CanSig
 ```
 
+Now unzip the dataset:
+```
+$ cd data
+$ unzip data.zip
+```
+A new file `data.h5ad` should appear.
+
+
