@@ -21,4 +21,7 @@ $ unzip data.zip
 ```
 A new file `data.h5ad` should appear.
 
+### Caution
+
+This code was **not** carefully designed and tested. Hence, it is likely that there are bugs inside – we advise treating the results with caution.
 
