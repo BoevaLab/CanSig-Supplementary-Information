@@ -32,7 +32,9 @@ BATCH = "Batch"
 
 def generate_filename(len_random_suffix: int = 5) -> str:
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    suffix = ''.join(random.choice(string.ascii_lowercase) for _ in range(len_random_suffix))
+    suffix = "".join(
+        random.choice(string.ascii_lowercase) for _ in range(len_random_suffix)
+    )
     return f"{timestamp}-{suffix}"
 
 
@@ -57,11 +59,7 @@ def run_matrix_method(
         random_state=0,
     )
 
-    return Results(
-        method=method_name,
-        params={},
-        scores=Scores(silhouette=silhouette)
-    )
+    return Results(method=method_name, params={}, scores=Scores(silhouette=silhouette))
 
 
 def run_scvi(
@@ -81,8 +79,18 @@ def run_cansig(
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("data", type=str, help="Path to the H5AD file.")
-    parser.add_argument("--method", choices=["combat", "bbknn", "scvi"], help="Method to be applied.", default="bbknn")
-    parser.add_argument("--output_dir", type=pathlib.Path, default=pathlib.Path("results"), help="Directory where a JSON file with results will be created.")
+    parser.add_argument(
+        "--method",
+        choices=["combat", "bbknn", "scvi"],
+        help="Method to be applied.",
+        default="bbknn",
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=pathlib.Path,
+        default=pathlib.Path("results"),
+        help="Directory where a JSON file with results will be created.",
+    )
 
     return parser
 
@@ -90,11 +98,15 @@ def create_parser() -> argparse.ArgumentParser:
 def get_results(args) -> Results:
     if args.method == "combat":
         return run_matrix_method(
-            scib.ig.combat, method_name=args.method, data_path=args.data,
+            scib.ig.combat,
+            method_name=args.method,
+            data_path=args.data,
         )
     elif args.method == "bbknn":
         return run_matrix_method(
-            scib.ig.bbknn, method_name=args.method, data_path=args.data,
+            scib.ig.bbknn,
+            method_name=args.method,
+            data_path=args.data,
         )
     elif args.method == "scvi":
         return run_scvi(data_path=args.data)
