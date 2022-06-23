@@ -1,14 +1,29 @@
 import argparse
+import dataclasses
 import json
 import pathlib
 import random
 import string
 from datetime import datetime
-from typing import Callable
+from typing import Callable, Optional
 
 import anndata as ad
 import scib
 from sklearn import metrics
+
+
+@dataclasses.dataclass
+class Scores:
+    silhouette: Optional[float] = None
+    calinski_harabasz: Optional[float] = None
+    davies_bouldin: Optional[float] = None
+
+
+@dataclasses.dataclass
+class Results:
+    method: str
+    scores: Scores
+    params: dict
 
 
 MALIGNANT = "maligant"
@@ -28,55 +43,80 @@ def get_malignant_cells(data_path: str) -> ad.AnnData:
 
 def run_matrix_method(
     method: Callable,
+    method_name: str,
     data_path: str,
     batch: str = BATCH,
-):
+) -> Results:
     malignant_data = get_malignant_cells(data_path)
     x = method(malignant_data, batch=batch)
 
-    return metrics.silhouette_score(
+    silhouette = metrics.silhouette_score(
         x.obsp["distances"].toarray(),
         labels=x.obs["Group"].values,
         metric="precomputed",
         random_state=0,
     )
 
+    return Results(
+        method=method_name,
+        params={},
+        scores=Scores(silhouette=silhouette)
+    )
+
+
+def run_scvi(
+    data_path: str,
+    batch: str = BATCH,
+) -> Results:
+    raise NotImplementedError
+
+
+def run_cansig(
+    data_path: str,
+    batch: str = BATCH,
+) -> Results:
+    raise NotImplementedError
+
 
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("data", type=str, help="Path to the H5AD file.")
-    parser.add_argument("--method", choices=["combat", "bbknn"], help="Method to be applied.", default="bbknn")
+    parser.add_argument("--method", choices=["combat", "bbknn", "scvi"], help="Method to be applied.", default="bbknn")
     parser.add_argument("--output_dir", type=pathlib.Path, default=pathlib.Path("results"), help="Directory where a JSON file with results will be created.")
 
     return parser
 
 
-def main() -> None:
-    args = create_parser().parse_args()
-
+def get_results(args) -> Results:
     if args.method == "combat":
-        score = run_matrix_method(
-            scib.ig.combat, data_path=args.data,
+        return run_matrix_method(
+            scib.ig.combat, method_name=args.method, data_path=args.data,
         )
     elif args.method == "bbknn":
-        score = run_matrix_method(
-            scib.ig.bbknn, data_path=args.data,
+        return run_matrix_method(
+            scib.ig.bbknn, method_name=args.method, data_path=args.data,
         )
+    elif args.method == "scvi":
+        return run_scvi(data_path=args.data)
     else:
         raise ValueError(f"Method {args.method} not recognized.")
 
+
+def main() -> None:
+    args = create_parser().parse_args()
+
+    # Get the result
+    results = get_results(args)
+
+    # Generate output path
     output_dir: pathlib.Path = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
-    
     output_path = output_dir / f"{generate_filename()}.json"
 
     with open(output_path, "w") as fp:
         json.dump(
             fp=fp,
-            obj={
-                "method": args.method,
-                "silhouette_score": score,
-            }
+            obj=dataclasses.asdict(results),
         )
 
 
