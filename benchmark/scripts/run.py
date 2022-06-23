@@ -1,5 +1,4 @@
 import argparse
-import json
 import pathlib
 import random
 import string
@@ -13,7 +12,6 @@ from sklearn import metrics
 
 import cansig.models.scvi as scvi
 import cansig.models.cansig as cs
-import cansig.integration.model as intmodel
 
 
 class Scores(pydantic.BaseModel):
@@ -31,6 +29,11 @@ class Results(pydantic.BaseModel):
 MALIGNANT = "maligant"
 BATCH = "Batch"
 GROUP = "Group"
+
+
+def log(message: str) -> None:
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    print(f"=== [{timestamp}] {message} ===")
 
 
 def generate_filename(len_random_suffix: int = 5) -> str:
@@ -95,37 +98,42 @@ def run_scvi(
             davies_bouldin=metrics.davies_bouldin_score(codes_array, labels),
         ),
     )
-
-    print(res)
     return res
 
 
 def run_cansig(
     data_path: str,
+    args: argparse.Namespace,
     batch: str = BATCH,
     non_malignant: str = "non-malignant"
 ) -> Results:
+    adata = ad.read_h5ad(data_path)
+    adata.obs["subclonal"] = adata.obs[BATCH]
+    adata.obs["malignant_key"] = adata.obs["malignant"].copy()
 
-    data = ad.read_h5ad(data_path)
-    data.obs['subclonal'] = data.obs[BATCH]
+    adata = cs.CanSig.preprocessing(adata)
 
-    adata = intmodel.CanSig.preprocessing(data)
-    intmodel.CanSig.setup_anndata(
+    cs.CanSig.setup_anndata(
         adata,
         cnv_key="X_cnv",  # column present in data.obs
         celltype_key=GROUP,
-        malignant_key="malignant",  # column present in data.obs
+        malignant_key="malignant_key",  # column present in data.obs
         malignant_cat=MALIGNANT,
         non_malignant_cat=non_malignant,
     )
 
-    malignant_index = None
-    raise NotImplementedError
+    config = cs.CanSigConfig(
+        batch=batch,
+        preprocessing=cs.PreprocessingConfig(n_top_genes=args.n_top_genes),
+        train=cs.TrainConfig(max_epochs=args.max_epochs),
+    )
+    model = cs.CanSigWrapper(config=config, data=adata)
 
-    idx = cansig.get_index(malignant_cells=True)
-    bdata = adata[idx, :].copy()
-    bdata.obsm['latent'] = cansig.get_latent_representation()
+    codes = model.get_latent_codes()
 
+    malignant_data = get_malignant_cells(data_path)
+
+    assert (codes.index == malignant_data.obs.index).all(), "Index mismatch."
     raise NotImplementedError
 
 
@@ -134,7 +142,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("data", type=str, help="Path to the H5AD file.")
     parser.add_argument(
         "--method",
-        choices=["combat", "bbknn", "scvi"],
+        choices=["combat", "bbknn", "scvi", "cansig"],
         help="Method to be applied.",
         default="bbknn",
     )
@@ -167,6 +175,8 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def get_results(args) -> Results:
+    log(f"Running method {args.method}...")
+
     if args.method == "combat":
         return run_matrix_method(
             scib.ig.combat,
@@ -181,6 +191,8 @@ def get_results(args) -> Results:
         )
     elif args.method == "scvi":
         return run_scvi(data_path=args.data, args=args)
+    elif args.method == "cansig":
+        return run_cansig(data_path=args.data, args=args)
     else:
         raise ValueError(f"Method {args.method} not recognized.")
 
@@ -196,8 +208,12 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"{generate_filename()}.json"
 
+    log(f"Saving results to {output_path}...")
+
     with open(output_path, "w") as fp:
         fp.write(results.json())
+
+    log("Run finished.")
 
 
 if __name__ == "__main__":
