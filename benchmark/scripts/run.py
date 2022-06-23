@@ -8,6 +8,7 @@ from typing import Optional
 import anndata as ad
 import pydantic
 import scanpy as sc
+import scanpy.external as sce
 import scib
 from sklearn import metrics
 
@@ -60,11 +61,8 @@ def run_bbknn(
     # TODO(Pawel): Which preprocessing should I use?
     #  Seems that the silhouette score is actually the best
     #  without any preprocessing, although this may be spurious...
-    # Option 1:
-    # sc.pp.normalize_per_cell(adata, counts_per_cell_after=10000)
-    # sc.pp.log1p(adata)
-    # Option 2:
     adata = scib.preprocessing.scale_batch(adata, batch)
+
     x = scib.ig.bbknn(adata, batch)
     silhouette = metrics.silhouette_score(
         x.obsp["distances"].toarray(),
@@ -73,6 +71,35 @@ def run_bbknn(
         random_state=0,
     )
     return Results(method="bbknn", params={}, scores=Scores(silhouette=silhouette))
+
+
+def run_scanorama(
+    data_path: str,
+    args: argparse.Namespace,
+    batch: str = BATCH,
+) -> Results:
+    adata = get_malignant_cells(data_path)
+
+    sc.pp.recipe_zheng17(adata)
+    sc.pp.pca(adata, n_comps=args.latent)
+    sce.pp.scanorama_integrate(adata, batch)
+
+    codes_array = adata.obsm["X_scanorama"]
+    labels = adata.obs[GROUP].values
+
+    return Results(
+        method="scanorama",
+        params={
+            "pca_dim": args.latent,
+        },
+        scores=Scores(
+            silhouette=metrics.silhouette_score(
+                codes_array, labels=labels, random_state=0
+            ),
+            calinski_harabasz=metrics.calinski_harabasz_score(codes_array, labels),
+            davies_bouldin=metrics.davies_bouldin_score(codes_array, labels),
+        ),
+    )
 
 
 def run_scvi(
@@ -84,7 +111,7 @@ def run_scvi(
 
     config = scvi.SCVIConfig(
         batch=batch,
-        n_latent=args.scvi_latent,
+        n_latent=args.latent,
         preprocessing=scvi.PreprocessingConfig(n_top_genes=args.n_top_genes),
         train=scvi.TrainConfig(max_epochs=args.max_epochs),
     )
@@ -96,23 +123,24 @@ def run_scvi(
     codes_array = codes.values
     labels = malignant_data.obs[GROUP].values
 
-    res = Results(
+    return Results(
         method="scvi",
         params=config.dict(),
         scores=Scores(
-            silhouette=metrics.silhouette_score(codes_array, labels=labels, random_state=0),
+            silhouette=metrics.silhouette_score(
+                codes_array, labels=labels, random_state=0
+            ),
             calinski_harabasz=metrics.calinski_harabasz_score(codes_array, labels),
             davies_bouldin=metrics.davies_bouldin_score(codes_array, labels),
         ),
     )
-    return res
 
 
 def run_cansig(
     data_path: str,
     args: argparse.Namespace,
     batch: str = BATCH,
-    non_malignant: str = "non-malignant"
+    non_malignant: str = "non-malignant",
 ) -> Results:
     adata = ad.read_h5ad(data_path)
     adata.obs["subclonal"] = adata.obs[BATCH]
@@ -148,7 +176,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("data", type=str, help="Path to the H5AD file.")
     parser.add_argument(
         "--method",
-        choices=["bbknn", "scvi", "cansig"],
+        choices=["bbknn", "scvi", "scanorama", "cansig"],
         help="Method to be applied.",
         default="bbknn",
     )
@@ -158,12 +186,7 @@ def create_parser() -> argparse.ArgumentParser:
         default=pathlib.Path("results"),
         help="Directory where a JSON file with results will be created.",
     )
-    parser.add_argument(
-        "--scvi-latent",
-        type=int,
-        default=5,
-        help="Latent space dimension."
-    )
+    parser.add_argument("--latent", type=int, default=5, help="Latent space dimension.")
     parser.add_argument(
         "--n-top-genes",
         type=int,
@@ -189,6 +212,8 @@ def get_results(args) -> Results:
         return run_scvi(data_path=args.data, args=args)
     elif args.method == "cansig":
         return run_cansig(data_path=args.data, args=args)
+    elif args.method == "scanorama":
+        return run_scanorama(data_path=args.data, args=args)
     else:
         raise ValueError(f"Method {args.method} not recognized.")
 
