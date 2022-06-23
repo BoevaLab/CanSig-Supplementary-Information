@@ -3,10 +3,11 @@ import pathlib
 import random
 import string
 from datetime import datetime
-from typing import Callable, Optional
+from typing import Optional
 
 import anndata as ad
 import pydantic
+import scanpy as sc
 import scib
 from sklearn import metrics
 
@@ -32,7 +33,7 @@ GROUP = "Group"
 
 
 def log(message: str) -> None:
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"=== [{timestamp}] {message} ===")
 
 
@@ -49,23 +50,29 @@ def get_malignant_cells(data_path: str) -> ad.AnnData:
     return data[data.obs["malignant"] == MALIGNANT].copy()
 
 
-def run_matrix_method(
-    method: Callable,
-    method_name: str,
+def run_bbknn(
     data_path: str,
+    args: argparse.Namespace,
     batch: str = BATCH,
 ) -> Results:
-    malignant_data = get_malignant_cells(data_path)
-    x = method(malignant_data, batch=batch)
+    adata = get_malignant_cells(data_path)
 
+    # TODO(Pawel): Which preprocessing should I use?
+    #  Seems that the silhouette score is actually the best
+    #  without any preprocessing, although this may be spurious...
+    # Option 1:
+    # sc.pp.normalize_per_cell(adata, counts_per_cell_after=10000)
+    # sc.pp.log1p(adata)
+    # Option 2:
+    adata = scib.preprocessing.scale_batch(adata, batch)
+    x = scib.ig.bbknn(adata, batch)
     silhouette = metrics.silhouette_score(
         x.obsp["distances"].toarray(),
         labels=x.obs[GROUP].values,
         metric="precomputed",
         random_state=0,
     )
-
-    return Results(method=method_name, params={}, scores=Scores(silhouette=silhouette))
+    return Results(method="bbknn", params={}, scores=Scores(silhouette=silhouette))
 
 
 def run_scvi(
@@ -112,7 +119,6 @@ def run_cansig(
     adata.obs["malignant_key"] = adata.obs["malignant"].copy()
 
     adata = cs.CanSig.preprocessing(adata)
-
     cs.CanSig.setup_anndata(
         adata,
         cnv_key="X_cnv",  # column present in data.obs
@@ -142,7 +148,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("data", type=str, help="Path to the H5AD file.")
     parser.add_argument(
         "--method",
-        choices=["combat", "bbknn", "scvi", "cansig"],
+        choices=["bbknn", "scvi", "cansig"],
         help="Method to be applied.",
         default="bbknn",
     )
@@ -177,18 +183,8 @@ def create_parser() -> argparse.ArgumentParser:
 def get_results(args) -> Results:
     log(f"Running method {args.method}...")
 
-    if args.method == "combat":
-        return run_matrix_method(
-            scib.ig.combat,
-            method_name=args.method,
-            data_path=args.data,
-        )
-    elif args.method == "bbknn":
-        return run_matrix_method(
-            scib.ig.bbknn,
-            method_name=args.method,
-            data_path=args.data,
-        )
+    if args.method == "bbknn":
+        return run_bbknn(data_path=args.data, args=args)
     elif args.method == "scvi":
         return run_scvi(data_path=args.data, args=args)
     elif args.method == "cansig":
