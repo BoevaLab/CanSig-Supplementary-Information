@@ -8,15 +8,8 @@ bioRxiv 2022.04.14.488324; doi: [https://doi.org/10.1101/2022.04.14.488324](http
 based around the [CanSig pipeline](https://github.com/boevaLab/cansig).
 
 
-## What we have inside
+## Contents
 
 ### Benchmark
-In `benchmark/` we test the batch integration algorithms on a simulated dataset.
+In `benchmark/` directory we test the batch integration algorithms on a simulated dataset.
 
-Remember to run 
-
-```
-$ git submodule update --init --recursive --remote
-```
-
-to initialize the git submodule.
