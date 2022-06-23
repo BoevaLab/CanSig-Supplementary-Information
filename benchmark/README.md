@@ -39,7 +39,11 @@ $ python scripts/run.py data/data.h5ad --method combat
 ```
 which produces a JSON with result for a particular method (and the choice of hyperparameters).
 
-To see all hyperparameter combinations, see the `scripts/benchmark.sh`.
+To see all hyperparameter combinations, see the `scripts/experiment.sh`. It can be run (inside the environment) using
+
+```
+source scripts/experiment.sh
+```
 
 ## Disclaimer
 

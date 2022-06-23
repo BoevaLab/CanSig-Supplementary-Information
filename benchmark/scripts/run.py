@@ -114,6 +114,7 @@ def run_scvi(
         n_latent=args.latent,
         preprocessing=scvi.PreprocessingConfig(n_top_genes=args.n_top_genes),
         train=scvi.TrainConfig(max_epochs=args.max_epochs),
+        model=scvi.ModelConfig(n_hidden=args.scvi_hidden, n_layers=args.scvi_layers)
     )
 
     model = scvi.SCVI(config=config, data=malignant_data)
@@ -181,7 +182,7 @@ def create_parser() -> argparse.ArgumentParser:
         default="bbknn",
     )
     parser.add_argument(
-        "--output_dir",
+        "--output-dir",
         type=pathlib.Path,
         default=pathlib.Path("results"),
         help="Directory where a JSON file with results will be created.",
@@ -198,6 +199,18 @@ def create_parser() -> argparse.ArgumentParser:
         type=int,
         default=200,
         help="Maximal number of epochs.",
+    )
+    parser.add_argument(
+        "--scvi-layers",
+        type=int,
+        default=1,
+        help="Number of scVI layers."
+    )
+    parser.add_argument(
+        "--scvi-hidden",
+        type=int,
+        default=128,
+        help="Number of neurons per layer in scVI."
     )
 
     return parser
