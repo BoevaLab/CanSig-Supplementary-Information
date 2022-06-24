@@ -20,6 +20,7 @@ class Scores(pydantic.BaseModel):
     silhouette: Optional[float] = pydantic.Field(default=None)
     calinski_harabasz: Optional[float] = pydantic.Field(default=None)
     davies_bouldin: Optional[float] = pydantic.Field(default=None)
+    kbet: Optional[float] = pydantic.Field(default=None)
 
 
 class Results(pydantic.BaseModel):
@@ -98,6 +99,12 @@ def run_scanorama(
             ),
             calinski_harabasz=metrics.calinski_harabasz_score(codes_array, labels),
             davies_bouldin=metrics.davies_bouldin_score(codes_array, labels),
+            kbet=scib.metrics.kBET(
+                adata,
+                batch_key=batch,
+                label_key=GROUP,
+                embed="X_scanorama",
+            )
         ),
     )
 
@@ -124,6 +131,8 @@ def run_scvi(
     codes_array = codes.values
     labels = malignant_data.obs[GROUP].values
 
+    malignant_data.obsm["X_scvi"] = codes.values
+
     return Results(
         method="scvi",
         params=config.dict(),
@@ -133,6 +142,12 @@ def run_scvi(
             ),
             calinski_harabasz=metrics.calinski_harabasz_score(codes_array, labels),
             davies_bouldin=metrics.davies_bouldin_score(codes_array, labels),
+            kbet=scib.metrics.kBET(
+                malignant_data,
+                batch_key=batch,
+                label_key=GROUP,
+                embed="X_scvi",
+            )
         ),
     )
 
@@ -141,35 +156,59 @@ def run_cansig(
     data_path: str,
     args: argparse.Namespace,
     batch: str = BATCH,
-    non_malignant: str = "non-malignant",
 ) -> Results:
     adata = ad.read_h5ad(data_path)
     adata.obs["subclonal"] = adata.obs[BATCH]
-    adata.obs["malignant_key"] = adata.obs["malignant"].copy()
+    adata.obs['malignant_key'] = adata.obs['Group'].apply(
+        lambda celltype: 'non-malignant' if celltype == 'Group3' else 'malignant')
+    adata.obs["celltype"] = adata.obs["Group"].values
+    adata.obs["sample_id"] = adata.obs[BATCH]
 
     adata = cs.CanSig.preprocessing(adata)
     cs.CanSig.setup_anndata(
         adata,
         cnv_key="X_cnv",  # column present in data.obs
         celltype_key=GROUP,
-        malignant_key="malignant_key",  # column present in data.obs
-        malignant_cat=MALIGNANT,
-        non_malignant_cat=non_malignant,
     )
 
     config = cs.CanSigConfig(
         batch=batch,
         preprocessing=cs.PreprocessingConfig(n_top_genes=args.n_top_genes),
         train=cs.TrainConfig(max_epochs=args.max_epochs),
+        n_latent=args.latent,
+        n_latent_batch_effect=args.latent,
+        n_latent_cnv=args.latent,
+        model=cs.ModelConfig(n_hidden=args.scvi_hidden, n_layers=args.scvi_layers),
     )
     model = cs.CanSigWrapper(config=config, data=adata)
 
     codes = model.get_latent_codes()
-
     malignant_data = get_malignant_cells(data_path)
 
+    codes_array = codes.values
+
     assert (codes.index == malignant_data.obs.index).all(), "Index mismatch."
-    raise NotImplementedError
+
+    malignant_data.obsm["X_cansig"] = codes
+    labels = malignant_data.obs[GROUP].values
+
+    return Results(
+        method="cansig",
+        params=config.dict(),
+        scores=Scores(
+            silhouette=metrics.silhouette_score(
+                codes_array, labels=labels, random_state=0
+            ),
+            calinski_harabasz=metrics.calinski_harabasz_score(codes_array, labels),
+            davies_bouldin=metrics.davies_bouldin_score(codes_array, labels),
+            kbet=scib.metrics.kBET(
+                malignant_data,
+                batch_key=batch,
+                label_key=GROUP,
+                embed="X_cansig",
+            )
+        ),
+    )
 
 
 def create_parser() -> argparse.ArgumentParser:

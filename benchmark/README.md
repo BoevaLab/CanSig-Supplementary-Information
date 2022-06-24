@@ -17,6 +17,13 @@ $ pip install scib
 $ pip install -e CanSig
 ```
 
+You will also need to install kBET using R:
+
+```
+$ R
+> devtools::install_github('theislab/kBET')
+```
+
 ## Getting the data
 
 Download the data from

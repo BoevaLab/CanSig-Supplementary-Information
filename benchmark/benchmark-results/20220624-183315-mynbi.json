@@ -1,0 +1,1 @@
+{"method": "scanorama", "scores": {"silhouette": 0.002456679940223694, "calinski_harabasz": 28.791446193775393, "davies_bouldin": 13.481779376253039, "kbet": 0.012624307003468616}, "params": {"pca_dim": 20}}
