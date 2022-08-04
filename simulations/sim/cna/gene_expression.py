@@ -78,7 +78,7 @@ def _create_changes_vector(mask: GeneVector, change: GeneVector, fill: float = 1
     return change * mask + fill * (~mask)
 
 
-def generate_masks(changes: GeneVector) -> Tuple[GeneVector, GeneVector]:
+def _generate_masks(changes: GeneVector) -> Tuple[GeneVector, GeneVector]:
     """Generates boolean masks for the CNV changes.
 
     Args:
@@ -86,32 +86,30 @@ def generate_masks(changes: GeneVector) -> Tuple[GeneVector, GeneVector]:
             and negative to losses. Zeros correspond to no CNVs. Shape (n_genes,)
 
     Returns:
-        boolean array, gain vector, shape (n_genes,)
-        boolean array, loss vector, shape (n_genes,)
+        boolean array, gain mask, shape (n_genes,)
+        boolean array, loss mask, shape (n_genes,)
     """
-    gain_vec = changes > 0
-    loss_vec = changes < 0
-    return gain_vec, loss_vec
+    gain_mask = changes > 0
+    loss_mask = changes < 0
+    return gain_mask, loss_mask
 
 
 def change_expression(
-    expression: GeneVector, gain_mask: GeneVector, loss_mask: GeneVector, gain_change: GeneVector, loss_change: GeneVector
+    expression: GeneVector, changes: GeneVector, gain_change: GeneVector, loss_change: GeneVector
 ) -> GeneVector:
     """Changes the expression.
 
     Args:
         expression: base rate of expression
-        gain_mask: binary mask, True for genes where the gain was observed
-        loss_mask: binary mask, True for genes where the loss was observed
-        gain_change: change vector, to be used at places
-
+        changes: a vector with positive entries representing CNV gains, negative losses, zeros for no changes
+        gain_change: expression change vector, used at places where gains were observed
+        loss_change: expression change vector, used at places where losses were observed
 
     Note:
         For `gain_change` and `loss_change` you may wish to use the `perturb`ed (independently for each cell)
         version of the original vectors (see `gain_vector` and `loss_vector`).
     """
-    if np.any(gain_mask == loss_mask):
-        raise ValueError("It is not possible to have a gain and a loss in one gene.")
+    gain_mask, loss_mask = _generate_masks(changes)
 
     multiply = _create_changes_vector(mask=gain_mask, change=gain_change)
     divide = _create_changes_vector(mask=loss_mask, change=loss_change)
