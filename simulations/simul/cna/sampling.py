@@ -193,7 +193,7 @@ def generate_probabilities(anchors_to_alphas: Dict[Anchors, Sequence[float]],
     for batch in batches:
         mask = get_mask(n_programs=n_programs, prob_dropout=prob_dropout, min_programs=min_programs, seed=rng)
 
-        for anchor, alphas in anchors_to_alphas.values():
+        for anchor, alphas in anchors_to_alphas.items():
             base_probs = rng.dirichlet(alphas)
             new_probs = probabilities_after_dropout(probabilities=base_probs, mask=mask)
 
