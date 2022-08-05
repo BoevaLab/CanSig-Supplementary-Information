@@ -102,11 +102,11 @@ class CNVProfileGenerator:
     def _index_with_changes(self, chromosome: ChromosomeName) -> pd.Index:
         """Returns the index of the genes in a chromosomes with a mutation."""
 
-        length = self._rng.integers(self.min_region_length, self.min_region_length, endpoint=True)
+        length = self._rng.integers(self.min_region_length, self.max_region_length, endpoint=True)
         chromosome_length = self._genome.chromosome_length(chromosome)
 
         # TODO(Pawel): Beware of a one-off error.
-        start_position = self._rng.integers(0, chromosome_length - length - 1)
+        start_position = self._rng.integers(0, chromosome_length - length)
         end_position = start_position + length
 
         assert end_position <= chromosome_length, "End position must be at most chromosome length."
@@ -189,7 +189,7 @@ class MostFrequentGainLossAnchorsEstimator:
     @property
     def gene_loss(self) -> GeneName:
         assert self._is_fitted, "The model must be fitted first."
-        return self._gene_gain_name
+        return self._gene_loss_name
 
     def _set_gain_gene(self, profiles: np.ndarray) -> None:
         gain_occurences = np.sum(profiles > 0, axis=0)  # Shape (n_genes,)
@@ -198,7 +198,7 @@ class MostFrequentGainLossAnchorsEstimator:
         self._gene_gain_name = self._gene_names[self._gene_gain_index]
 
     def _set_loss_gene(self, profiles: np.ndarray) -> None:
-        loss_occurences = np.sum(profiles > 0, axis=0)  # Shape (n_genes,)
+        loss_occurences = np.sum(profiles < 0, axis=0)  # Shape (n_genes,)
 
         self._gene_loss_index = loss_occurences.argmax()
         self._gene_loss_name = self._gene_names[self._gene_loss_index]
@@ -207,11 +207,12 @@ class MostFrequentGainLossAnchorsEstimator:
         """Fits the model to subclones, finding the anchor (gain and loss) genes.
 
         Args:
-            subclone_profiles: CNV profiles, shape (n_subclones, n_genes)
+            profiles: CNV profiles, shape (n_subclones, n_genes)
 
         Raises:
             ValueError if the "gain gene" and the "loss gene" are the same.
         """
+        profiles = np.asarray(profiles)
         assert profiles.shape == (profiles.shape[0], self._n_genes), "Shape mismatch."
 
         # Find the gain gene
@@ -247,5 +248,7 @@ class MostFrequentGainLossAnchorsEstimator:
         Returns:
             anchors for each cell, length n_cells
         """
+        profiles = np.asarray(profiles)
+
         assert self._is_fitted, "The model needs to be fit before predictions."
         return [self._predict_single(profile) for profile in profiles]

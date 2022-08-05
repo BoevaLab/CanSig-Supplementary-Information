@@ -3,7 +3,7 @@ import numpy.testing as nptest
 
 import pytest
 
-import sim.cna.gene_expression as gex
+import simul.cna.gene_expression as gex
 
 
 @pytest.mark.parametrize("fill", [1.0, 2.0])
