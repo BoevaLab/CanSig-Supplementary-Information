@@ -1,6 +1,6 @@
 """The code used to simulate CNA profiles across genes
 as well as utilities for finding anchors."""
-from typing import Sequence, Tuple, TypeVar
+from typing import List, Sequence, Tuple, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -133,3 +133,119 @@ class CNVProfileGenerator:
             changes[index] = -1
 
         return changes.values
+
+
+GainLossAnchor = Tuple[bool, bool]
+GeneName = str
+
+
+class MostFrequentGainLossAnchorsEstimator:
+    """This class takes a family of subclone profiles,
+    calculates the anchors and offers a way
+    of calculating the anchors from the profiles.
+
+    The API is based on Sci-Kit Learn.
+
+    In the fitting procedure, we feed the CNV profiles and select the "gain gene"
+    and the "loss gene".
+
+    The "gain gene" is the gene with most frequent gains. Ties are
+
+    The anchor is a boolean tuple representing:
+    (is a gain in the "gain gene", is a loss on the "loss gene")
+
+    Note that if there is a loss on the "gain gene", the value in the anchor
+    is going to be False (similarly for the gain on the loss gene).
+    """
+    def __init__(self, gene_names: Union[Genome, Sequence[GeneName]]) -> None:
+        """
+        Args:
+            gene_names: the gene order, matching the profile vectors. Can be a Genome object or a sequence of names
+        """
+        self._gene_names: List[GeneName]
+        if isinstance(gene_names, Genome):
+            self._gene_names = gene_names.original_index.tolist()
+        else:
+            self._gene_names = list(gene_names)
+
+        # Number of genes
+        self._n_genes = len(self._gene_names)
+
+        # Flag to check whether the model is fitted before predictions
+        self._is_fitted: bool = False
+        # The gain gene name and its index. Will be set during the fitting procedure.
+        self._gene_gain_name: GeneName = None
+        self._gene_gain_index: int = None
+
+        # The loss gene name and its index. Will be set during the fitting procedure.
+        self._gene_loss_name: GeneName = None
+        self._gene_loss_index: int = None
+
+    @property
+    def gene_gain(self) -> GeneName:
+        assert self._is_fitted, "The model must be fitted first."
+        return self._gene_gain_name
+
+    @property
+    def gene_loss(self) -> GeneName:
+        assert self._is_fitted, "The model must be fitted first."
+        return self._gene_gain_name
+
+    def _set_gain_gene(self, profiles: np.ndarray) -> None:
+        gain_occurences = np.sum(profiles > 0, axis=0)  # Shape (n_genes,)
+
+        self._gene_gain_index = gain_occurences.argmax()
+        self._gene_gain_name = self._gene_names[self._gene_gain_index]
+
+    def _set_loss_gene(self, profiles: np.ndarray) -> None:
+        loss_occurences = np.sum(profiles > 0, axis=0)  # Shape (n_genes,)
+
+        self._gene_loss_index = loss_occurences.argmax()
+        self._gene_loss_name = self._gene_names[self._gene_loss_index]
+
+    def fit(self, profiles: np.ndarray) -> None:
+        """Fits the model to subclones, finding the anchor (gain and loss) genes.
+
+        Args:
+            subclone_profiles: CNV profiles, shape (n_subclones, n_genes)
+
+        Raises:
+            ValueError if the "gain gene" and the "loss gene" are the same.
+        """
+        assert profiles.shape == (profiles.shape[0], self._n_genes), "Shape mismatch."
+
+        # Find the gain gene
+        self._set_gain_gene(profiles)
+        assert self._gene_gain_name is not None
+        assert self._gene_gain_index is not None
+
+        # Find the loss gene
+        self._set_loss_gene(profiles)
+        assert self._gene_loss_name is not None
+        assert self._gene_loss_index is not None
+
+        # Check that the gain gene and the loss gene are different
+        if self._gene_gain_name == self._gene_loss_name:
+            raise ValueError(f"Gene {self._gene_gain_name} was selected to be both gain gene and the loss gene.")
+
+        # Toggle the flag
+        self._is_fitted = True
+
+    def _predict_single(self, profile: np.ndarray) -> GainLossAnchor:
+        """Like `predict`  but for a single CNV profile."""
+        return (
+            profile[self._gene_gain_index] > 0,
+            profile[self._gene_loss_index] < 0,
+        )
+
+    def predict(self, profiles: np.ndarray) -> List[GainLossAnchor]:
+        """Generates anchors for given CNV profiles.
+
+        Args:
+            profiles: CNV profiles, shape (n_cells, n_genes)
+
+        Returns:
+            anchors for each cell, length n_cells
+        """
+        assert self._is_fitted, "The model needs to be fit before predictions."
+        return [self._predict_single(profile) for profile in profiles]

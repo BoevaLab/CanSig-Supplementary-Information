@@ -11,7 +11,7 @@ from ..rand import Seed
 CNAExpressionChangeVector = GeneVector
 
 
-def gain_vector(n_genes: int, rng: Seed = 123) -> CNAExpressionChangeVector:
+def sample_gain_vector(n_genes: int, rng: Seed = 123) -> CNAExpressionChangeVector:
     """Generates a vector controlling by what factor expression should change if a gene copy is gained.
 
     For each gene `g`:
@@ -29,7 +29,7 @@ def gain_vector(n_genes: int, rng: Seed = 123) -> CNAExpressionChangeVector:
     return generator.lognormal(mean=np.log(1.5), sigma=0.3, size=n_genes)
 
 
-def loss_vector(n_genes: int, rng: Seed = 421) -> CNAExpressionChangeVector:
+def sample_loss_vector(n_genes: int, rng: Seed = 421) -> CNAExpressionChangeVector:
     """Generates a vector controlling by what factor expression should change if a gene copy is lost.
 
     For each gene `g`:
