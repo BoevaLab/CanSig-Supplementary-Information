@@ -42,6 +42,12 @@ class Encoder(nn.Module):
         return mu, logvar
 
 
+def sample(mu: torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
+    std = torch.exp(logvar / 2)
+    eps = torch.randn_like(std)
+    return mu + eps * std
+
+
 class Decoder(nn.Module):
     def __init__(
         self,
