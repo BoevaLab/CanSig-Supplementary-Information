@@ -163,5 +163,17 @@ class Dhaka(pl.LightningModule):
         return optimizer
 
     def training_step(self, train_batch):
-        raise NotImplementedError
+        # Infer the distributions for each data point
+        mu, logvar = self.encoder(train_batch)
 
+        # Sample one point from each distribution
+        reconstructed = self.decoder(mu, logvar)
+
+        # Calculate the reconstruction loss, averaged per datapoint
+        reconstruction_loss = nn.functional.binary_cross_entropy(reconstructed, train_batch, reduction="mean")
+
+        # Calculate the KL term averaged per datapoint (as the loss above is averaged, rather than summed).
+        # Note also the minus sign --- we will add different losses in the end.
+        kl_loss = -kl_divergence(mu, logvar) / len(train_batch)
+
+        return reconstruction_loss + kl_loss

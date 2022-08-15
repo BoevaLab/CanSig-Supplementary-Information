@@ -46,3 +46,21 @@ def test_sample_right_mean_and_variance(n_latent: int, batch_size: int = 4, n_sa
 
     assert empirical_mu == pytest.approx(mu, rel=0.03, abs=0.03)
     assert empirical_std == pytest.approx(torch.exp(0.5 * logvar), rel=0.05, abs=0.005)
+
+
+def test_kl_divergence(batch_size: int = 5, n_latent: int = 3) -> None:
+    mu = torch.zeros(batch_size, n_latent)
+    logvar = torch.zeros(batch_size, n_latent)
+    assert vae.kl_divergence(mu, logvar) == 0
+
+
+@pytest.mark.parametrize("activation", ["sigmoid", "relu"])
+def test_decoder(activation: str, batch_size: int = 5, n_latent: int = 4, output_dim: int = 10) -> None:
+    decoder = vae.Decoder(output_dim=output_dim, latent_dim=n_latent, hidden1=3, hidden2=2, hidden3=3)
+
+    some_mus = torch.randn(batch_size, n_latent)
+    some_logvars = torch.randn_like(some_mus)
+
+    x_decoded = decoder(some_mus, some_logvars)
+
+    assert x_decoded.size() == (batch_size, output_dim)
