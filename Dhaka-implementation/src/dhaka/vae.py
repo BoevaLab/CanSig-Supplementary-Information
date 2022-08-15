@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Literal, Tuple
 
 import pytorch_lightning as pl
 
@@ -42,10 +42,50 @@ class Encoder(nn.Module):
         return mu, logvar
 
 
+def calculate_std(logvar: torch.Tensor) -> torch.Tensor:
+    """Passes from logarithm of the variance to the standard deviation.
+
+    Args:
+        logvar: logarithm of the variance, shape (batch, n_latent)
+
+    Returns:
+        standard deviations, shape (batch, n_latent)
+    """
+    return torch.exp(logvar / 2)
+
+
 def sample(mu: torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
-    std = torch.exp(logvar / 2)
-    eps = torch.randn_like(std)
-    return mu + eps * std
+    """Returns a one-point sample from each distribution.
+
+    Args:
+        mu: mean vectors of the distributions, shape (batch, n_latent)
+        logvar: logarithm of the variance for each distribution, shape (batch, n_latent)
+
+    Returns:
+        a batch of samples (one from each distribution), shape (batch, n_latent)
+    """
+    eps = torch.randn_like(mu)
+    return mu + eps * calculate_std(logvar)
+
+
+def kl_divergence(mu: torch.Tensor, logvar: torch.Tensor) -> float:
+    """For a batch of multinormal distributions calculates the sum of
+    KL divergences between each of them and Normal(0, Identity)
+
+    Args:
+        mu: shape (batch, n_latent)
+        logvar: shape (batch, n_latent)
+
+    Returns:
+        KL divergence summed along all points
+
+    Note:
+        There is a _minus_ sign:
+            Loss = Reconstruction - KL
+    """
+    # As in the original VAE paper, the equation is
+    # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
+    return 0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
 
 
 class Decoder(nn.Module):
@@ -56,8 +96,12 @@ class Decoder(nn.Module):
         hidden1: int = 256,
         hidden2: int = 512,
         hidden3: int = 1024,
+        final_activation: Literal["sigmoid", "relu"] = "sigmoid",
     ) -> None:
         super().__init__()
+
+        assert final_activation in ["sigmoid", "relu"]
+        assert min(hidden1, hidden2, hidden3, output_dim, latent_dim) > 0
 
         self.layers = nn.Sequential(
             nn.Linear(latent_dim, hidden1),
@@ -68,10 +112,12 @@ class Decoder(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden3, output_dim),
         )
+        self.final_activation = nn.Sigmoid() if final_activation == "sigmoid" else nn.ReLU()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        y = self.layers(x)
-        raise NotImplementedError
+    def forward(self, mu: torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
+        z = sample(mu=mu, logvar=logvar)
+        x_raw = self.layers(z)
+        return self.final_activation(x_raw)
 
 
 class Dhaka(pl.LightningModule):
