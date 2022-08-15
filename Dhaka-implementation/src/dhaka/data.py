@@ -20,3 +20,11 @@ def example_data(
     mask = rng.binomial(1, 1 - dropout, size=(n_cells, n_genes))
 
     return ad.AnnData(X=counts * mask)
+
+
+def normalize(data: ad.AnnData) -> ad.AnnData:
+    """
+    """
+
+
+    raise NotImplementedError
