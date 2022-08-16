@@ -12,6 +12,10 @@ We store here our analyses, experiments, as well as the code to generate the fig
 ### Benchmark
 In `benchmark/` directory we test the batch integration algorithms on a simulated dataset.
 
+
+### Dhaka implementation
+In `Dhaka-implementation/` directory we provide an unofficial PyTorch implementation of [Dhaka](https://doi.org/10.1093/bioinformatics/btz095) dimension reduction method.
+
+
 ### Simulations
 In `simulations/` directory we provide a procedure to generate artificial cancer datasets, with copy number aberrations affecting gene expression.
-
