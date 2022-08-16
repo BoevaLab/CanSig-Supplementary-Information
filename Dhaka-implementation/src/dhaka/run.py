@@ -88,7 +88,7 @@ def run_dhaka(adata: ad.AnnData, config: DhakaConfig, key_added: str = _DEFAULT_
     train_dataloader = torch.utils.data.DataLoader(dataset=dataset, shuffle=True, batch_size=config.batch_size)
 
     # Define a model and the training procedure (with gradient clipping)
-    model = vae.Dhaka(n_genes=dataset.n_features, latent_dim=config.n_latent)
+    model = vae.Dhaka(n_genes=dataset.n_features, latent_dim=config.n_latent, learning_rate=config.learning_rate)
     trainer = pl.Trainer(
         max_epochs=config.epochs,
         gradient_clip_val=config.clip_norm,
