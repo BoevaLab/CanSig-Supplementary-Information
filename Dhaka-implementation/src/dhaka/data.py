@@ -1,7 +1,8 @@
 import anndata as ad
 import numpy as np
 
-import torch.utils.data as torchdata
+import torch
+import torch.utils.data
 
 
 def example_data(
@@ -31,7 +32,7 @@ def _to_array(array_like):
         return np.asarray(array_like)
 
 
-def _normalize(X: np.ndarray, total_expression: float = 1e6) -> np.ndarray:
+def _normalize(X: np.ndarray, total_expression: float) -> np.ndarray:
     """Normalizes the counts matrix such that the total expression per cell is fixed.
 
     Args:
@@ -69,7 +70,7 @@ def _find_most_expressed_genes(X: np.ndarray, n_top_genes: int) -> np.ndarray:
         _find_most_expressed_genes(X, K) == np.array([0, 1, 2])
     """
     mean_expression = np.mean(X, axis=0)
-    assert mean_expression.shape == X.shape[1]
+    assert mean_expression.shape == (X.shape[1],)
 
     sorted_expression = sorted(range(len(mean_expression)), key=lambda i: mean_expression[i], reverse=True)
     genes_to_take = sorted_expression[:n_top_genes]
@@ -77,7 +78,7 @@ def _find_most_expressed_genes(X: np.ndarray, n_top_genes: int) -> np.ndarray:
     return np.asarray(sorted(genes_to_take))
 
 
-def _select_most_expressed_genes(X: np.ndarray, n_top_genes: int = 5000) -> np.ndarray:
+def _select_most_expressed_genes(X: np.ndarray, n_top_genes: int) -> np.ndarray:
     """Selects the genes with the highest average expression.
 
     Args:
@@ -88,21 +89,42 @@ def _select_most_expressed_genes(X: np.ndarray, n_top_genes: int = 5000) -> np.n
         array of shape (n_cells, n_new_genes), where n_new_genes = min(n_top_genes, n_genes)
     """
     genes = _find_most_expressed_genes(X, n_top_genes=n_top_genes)
+    return X[:, genes]
 
 
-def normalize(data: ad.AnnData, pseudocounts: float = 1.0, n_top_genes: int = 5000, normalization: float = 1e6) -> np.ndarray:
-    """
+def normalize(data: ad.AnnData, pseudocounts: float = 1.0, n_top_genes: int = 5000, total_expression: float = 1e6) -> np.ndarray:
+    """Data normalization procedure.
+
+    We tried to mimick the procedure described in Supplement 1.1. We decided to add pseudocounts, as there may be
+    zero entries and log2 may return infinite values.
     """
     X = _to_array(data.X)  # Shape (n_cells, n_genes)
-    n_cells, n_genes = X.shape
 
+    # Normalize the cells so that each has `total_expression` counts
+    X = _normalize(X, total_expression=total_expression)
 
-    # Add pseudocounts, to deal with sparsity
+    # Add pseudocounts, to deal with zero entries at logarithm stage
     X = X + pseudocounts
 
-    # Normalize so that each cell has the same amount of counts
-    X = normalization * X / summed
+    # Select the most expressed genes
+    X = _select_most_expressed_genes(X, n_top_genes=n_top_genes)
 
-    # Select the genes with the most expression
+    # Return the logarithmied data
+    return np.log2(X)
 
-    # Return log2-transformed values
+
+class NumpyArrayDataset(torch.utils.data.Dataset):
+    def __init__(self, X: np.ndarray) -> None:
+        assert X.shape == (X.shape[0], X.shape[1]), f"X should be two-dimensional array. Its shape is {X.shape}."
+
+        self._X = X
+
+    def __len__(self) -> int:
+        return len(self._X)
+
+    def __getitem__(self, index: int) -> torch.Tensor:
+        return torch.tensor(self._X[index])
+
+    @property
+    def n_features(self) -> int:
+        return self._X.shape[1]
