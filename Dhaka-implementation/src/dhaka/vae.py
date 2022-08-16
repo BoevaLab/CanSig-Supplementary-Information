@@ -159,7 +159,7 @@ class Dhaka(pl.LightningModule):
         self._learning_rate = learning_rate
 
     def configure_optimizers(self):
-        optimizer = torch.optim.RMSprop(self.parameters, lr=self._learning_rate)
+        optimizer = torch.optim.RMSprop(self.parameters(), lr=self._learning_rate)
         return optimizer
 
     def training_step(self, train_batch):
@@ -177,3 +177,10 @@ class Dhaka(pl.LightningModule):
         kl_loss = -kl_divergence(mu, logvar) / len(train_batch)
 
         return reconstruction_loss + kl_loss
+
+    def forward(self, batch) -> Tuple[torch.Tensor, torch.Tensor]:
+        return self.encoder(batch)
+
+    def representations(self, batch) -> torch.Tensor:
+        mu, logvar = self.forward(batch)
+        return mu
