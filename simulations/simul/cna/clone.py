@@ -1,4 +1,3 @@
-from lib2to3.pgen2.token import OP
 import numpy as np
 import pandas as pd
 
@@ -50,12 +49,13 @@ class Subclone:
         """
         returns the array of changes, either created from the ancestral clone or generated de novo
             if the clone is ancestral
+            changes are shape (n_genes,)
         """
         if self._ancestral:
             return self._CNVGenerator.generate_ancestral_subclone()
         else:
             return self._CNVGenerator.generate_child_subclone(self._ancestral_changes)
 
-    def _anchor_gain_profile(self) -> np.ndarray:
+    def _anchor_gain_profile(self) -> List[bool]:
         """Returns a boolean array corresponding to if the anchor is gained or not"""
         return [True if self.profile[anchor] == 1 else False for anchor in self.anchors]
