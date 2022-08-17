@@ -54,6 +54,17 @@ def test_kl_divergence(batch_size: int = 5, n_latent: int = 3) -> None:
     assert vae.kl_divergence(mu, logvar) == 0
 
 
+@pytest.mark.parametrize("random_seed", [0, 1, 2])
+@pytest.mark.parametrize("dim", [2, 3])
+def test_kl_divergence(random_seed: int, dim: int) -> None:
+    torch.manual_seed(random_seed)
+
+    mu = torch.randn(1, dim)
+    logvar = torch.randn(1, dim)
+
+    assert vae.kl_divergence(mu, logvar) > 0
+
+
 @pytest.mark.parametrize("activation", ["sigmoid", "relu"])
 def test_decoder(activation: str, batch_size: int = 5, n_latent: int = 4, output_dim: int = 10) -> None:
     decoder = vae.Decoder(output_dim=output_dim, latent_dim=n_latent, hidden1=3, hidden2=2, hidden3=3)
