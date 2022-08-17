@@ -84,8 +84,8 @@ def kl_divergence(mu: torch.Tensor, logvar: torch.Tensor) -> float:
             Loss = Reconstruction - KL
     """
     # As in the original VAE paper, the equation is
-    # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
-    return 0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+    # KL( N(mu, sigma^2) || N(0, I) ) = -0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
+    return -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
 
 
 class Decoder(nn.Module):
@@ -127,6 +127,7 @@ class Dhaka(pl.LightningModule):
         latent_dim: int = 3,
         learning_rate: float = 1e-4,
         hidden_layers: Tuple[int] = (256, 512, 1024),
+        scale_reconstruction_loss: bool = True,
     ) -> None:
         """
 
@@ -136,10 +137,13 @@ class Dhaka(pl.LightningModule):
             learning_rate: learning rate
             hidden_layers: hidden layers of the DECODER (passing from latent_dim to n_genes)
                 We use three layers for the decoder. The encoder architecture is a symmetric one.
+            scale_reconstruction_loss: whether the reconstruction loss should be rescaled by the number of genes
+                In the original implementation, it's True. I personally think this should be False.
         """
         super().__init__()
 
         assert len(hidden_layers) == 3
+
         self.encoder = Encoder(
             input_dim=n_genes,
             latent_dim=latent_dim,
@@ -156,6 +160,7 @@ class Dhaka(pl.LightningModule):
             hidden3=hidden_layers[2],
         )
 
+        self._scaling_factor = float(n_genes) if scale_reconstruction_loss else 1.0
         self._learning_rate = learning_rate
 
     def configure_optimizers(self):
@@ -170,11 +175,10 @@ class Dhaka(pl.LightningModule):
         reconstructed = self.decoder(mu, logvar)
 
         # Calculate the reconstruction loss, averaged per datapoint
-        reconstruction_loss = nn.functional.binary_cross_entropy(reconstructed, train_batch, reduction="mean")
+        reconstruction_loss = self._scaling_factor * nn.functional.binary_cross_entropy(reconstructed, train_batch, reduction="mean")
 
         # Calculate the KL term averaged per datapoint (as the loss above is averaged, rather than summed).
-        # Note also the minus sign --- we will add different losses in the end.
-        kl_loss = -kl_divergence(mu, logvar) / len(train_batch)
+        kl_loss = kl_divergence(mu, logvar) / len(train_batch)
 
         return reconstruction_loss + kl_loss
 

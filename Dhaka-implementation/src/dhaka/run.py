@@ -38,6 +38,11 @@ class DhakaConfig:
       batch_size: batch size
       learning_rate: learning rate
       clip_norm: the gradient norm is clipped to prevent exploding/vanishing gradients (see
+
+    *** Magic flags (IMPORTANT) ***
+      scale_reconstruction_loss: boolean flag whether to rescale reconstruction loss by the number of genes.
+        In the original code it seems to be the case. I personally don't think it is right (but I may be wrong).
+        Probably the best idea is to ablate on this.
     """
     # Latent representations
     n_latent: int = 3
@@ -50,6 +55,8 @@ class DhakaConfig:
     batch_size: int = 50
     learning_rate: float = 1e-4
     clip_norm: float = 2.0
+    # Magic flag
+    scale_reconstruction_loss: bool = True
 
 
 def _validate_config(config: DhakaConfig) -> None:
@@ -88,7 +95,12 @@ def run_dhaka(adata: ad.AnnData, config: DhakaConfig, key_added: str = _DEFAULT_
     train_dataloader = torch.utils.data.DataLoader(dataset=dataset, shuffle=True, batch_size=config.batch_size)
 
     # Define a model and the training procedure (with gradient clipping)
-    model = vae.Dhaka(n_genes=dataset.n_features, latent_dim=config.n_latent, learning_rate=config.learning_rate)
+    model = vae.Dhaka(
+        n_genes=dataset.n_features,
+        latent_dim=config.n_latent,
+        learning_rate=config.learning_rate,
+        scale_reconstruction_loss=config.scale_reconstruction_loss,
+    )
     trainer = pl.Trainer(
         max_epochs=config.epochs,
         gradient_clip_val=config.clip_norm,
