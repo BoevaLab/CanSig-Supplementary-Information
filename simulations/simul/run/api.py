@@ -12,4 +12,5 @@ from .simulate_utils import (
     simulate_gex_healthy,
     sample_patient_original,
     sample_patient_original_replacement,
+    drop_rarest_program,
 )

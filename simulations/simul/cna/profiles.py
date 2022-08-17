@@ -130,8 +130,10 @@ class CNVPerBatchGenerator:
             self.min_region_length, self.max_region_length, endpoint=True
         )
         chromosome_length = self._genome.chromosome_length(chromosome)
-
-        start_position = self._rng.integers(0, chromosome_length)
+        if (chromosome_length - length) <= 0:
+            start_position = 0
+        else:
+            start_position = self._rng.integers(0, chromosome_length - length)
         end_position = min(start_position + length, chromosome_length)
 
         assert (
@@ -180,6 +182,8 @@ class CNVPerBatchGenerator:
         array = start_array + end_array
         # set the probability of choosing the unauthorized positions to 0, set uniform prob for the rest
         prob_mask = 1 - (array != 0).astype(int)
+        # the change can't occur at the end if there isn't length genes left
+        prob_mask[-length:] = 0
 
         # maybe none of the position can create non-overlapping gains/losses, in which case
         # we skip this chromosome
