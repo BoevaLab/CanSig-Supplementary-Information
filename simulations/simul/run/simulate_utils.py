@@ -3,7 +3,7 @@ import numpy as np
 import anndata as ad
 import scvi
 
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from ..patients.dataset import Dataset
 from ..cna.api import ProgramDistribution
@@ -104,6 +104,44 @@ def simulate_malignant_comp_batches(
     return all_malignant_obs
 
 
+def drop_rarest_program(
+    all_malignant_obs: Dict[str, pd.Series],
+    dataset: Dataset,
+    p_1: float = 0.3,
+    p_2: float = 0.5,
+) -> Tuple[Dict[str, pd.Series], Dataset]:
+
+    # get the mapping from name to patient in the dataset
+    mapping_patients = dataset.name_to_patient()
+
+    for patient in all_malignant_obs:
+        sort_programs = all_malignant_obs[patient].program.value_counts().sort_values()
+        rarest_program = sort_programs.index[0]
+        second_rarest_program = sort_programs.index[1]
+        if np.random.binomial(p=p_1, n=1, size=1):
+            # drop the rarest progam
+            all_malignant_obs[patient] = all_malignant_obs[patient][
+                ~(all_malignant_obs[patient].program == rarest_program)
+            ]
+            # update the number of malignant cells
+            mapping_patients[patient].n_malignant_cells = all_malignant_obs[
+                patient
+            ].shape[0]
+
+            # only if the rarest program was dropped is there the possibility for
+            # the second rarest to be dropped
+            if np.random.binomial(p=p_2, n=1, size=1):
+                # drop the second rarest progam
+                all_malignant_obs[patient] = all_malignant_obs[patient][
+                    ~(all_malignant_obs[patient].program == second_rarest_program)
+                ]
+                # update the number of malignant cells
+                mapping_patients[patient].n_malignant_cells = all_malignant_obs[
+                    patient
+                ].shape[0]
+    return all_malignant_obs, dataset
+
+
 def simulate_healthy_comp_batches(dataset: Dataset) -> Dict[str, pd.DataFrame]:
     """Simulates the composition of healthy cells for a dataset
 
@@ -119,7 +157,10 @@ def simulate_healthy_comp_batches(dataset: Dataset) -> Dict[str, pd.DataFrame]:
     all_healthy_obs = {}
     for patient in dataset.patients:
         clones = ["NA"] * patient.n_healthy_cells
-        cell_programs = ["NA"] * patient.n_healthy_cells
+        cell_programs = [
+            np.random.choice(["Macro", "Plasma"])
+            for _ in range(patient.n_healthy_cells)
+        ]
         malignant = ["non_malignant"] * patient.n_healthy_cells
 
         df_obs = pd.DataFrame(
@@ -226,11 +267,12 @@ def simulate_gex_malignant(
             adata=adata, patient=sample_patients[patient], model=model
         )
 
-        n_vars = zinb_params[list(zinb_params.keys())[0]]["mean"].shape[1]
-
+        # we first select which genes belong to the highly/lowly expressed, as the effect of
+        # gains/losses on gene expression depends on the original expression of the gene
+        mask_high = gex.get_mask_high(adata=adata, quantile=0.9)
         # simulate the effect of a gain/loss for a specific gene separately for each patient
-        gain_expr = gex.sample_gain_vector(n_vars)
-        loss_expr = gex.sample_loss_vector(n_vars)
+        gain_expr = gex.sample_gain_vector(mask_high=mask_high)
+        loss_expr = gex.sample_loss_vector(mask_high=mask_high)
 
         # retrieve the subclone profiles
         mapping_patients = dataset.name_to_patient()
@@ -252,7 +294,7 @@ def simulate_gex_malignant(
             subclone_profile = patient_subclone_profiles[cell_subclones[i]].ravel()
 
             mean_gex = zinb_params[program]["mean"][cell_index]
-            mean_gex = gex.perturb(mean_gex, sigma=0.01)
+
             # this will modify the expression using the subclone profile of the cell
             mean_gex = gex.change_expression(
                 mean_gex,
@@ -260,17 +302,22 @@ def simulate_gex_malignant(
                 gain_change=gain_expr,
                 loss_change=loss_expr,
             )
+            # we clip the values so that 0 entries become 0.0001. This is because we
+            # sample from a gamma distribution at the beginning
+            # the % of 0 in the data is small enough that the approximation should be ok
+            mean_gex = np.clip(mean_gex, a_min=0.0001, a_max=None)
             mean_array.append(mean_gex)
             dispersion_array.append(zinb_params[program]["dispersions"][cell_index])
             log_dropout_array.append(zinb_params[program]["dropout"][cell_index])
             libsize_array.append(zinb_params[program]["libsize"][cell_index])
 
         print("Starting ZINB sampling")
+
         batch_gex = get_zinb_gex(
-            mean_array=mean_array,
-            dispersion_array=dispersion_array,
-            log_dropout_array=log_dropout_array,
-            libsize_array=libsize_array,
+            mean_array=np.array(mean_array),
+            dispersion_array=np.array(dispersion_array),
+            log_dropout_array=np.array(log_dropout_array),
+            libsize_array=np.array(libsize_array),
         )
         all_malignant_gex[patient] = batch_gex
 
@@ -301,10 +348,11 @@ def simulate_gex_healthy(
         a dictionary with the name of the simulated patient as key and the simulated counts as value
     """
     all_healthy_gex = {}
-    program = "healthy"
 
     for patient in all_healthy_obs:
         df_obs = all_healthy_obs[patient]
+
+        cell_programs = df_obs.program.ravel()
 
         # get the parameters associated with the patient
         print("Getting patient parameters")
@@ -315,8 +363,9 @@ def simulate_gex_healthy(
         print("Getting cell specific parameters")
         mean_array, dispersion_array, log_dropout_array, libsize_array = [], [], [], []
 
-        for _ in range(df_obs.shape[0]):
-
+        for program in cell_programs:
+            # here we do not draw without replacement because the number of cells we generate might
+            # be very different from the original number of cells in the patient
             cell_index = np.random.randint(zinb_params[program]["mean"].shape[0])
 
             mean_array.append(zinb_params[program]["mean"][cell_index])

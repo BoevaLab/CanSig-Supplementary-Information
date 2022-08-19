@@ -130,8 +130,10 @@ class CNVPerBatchGenerator:
             self.min_region_length, self.max_region_length, endpoint=True
         )
         chromosome_length = self._genome.chromosome_length(chromosome)
-
-        start_position = self._rng.integers(0, chromosome_length)
+        if (chromosome_length - length) <= 0:
+            start_position = 0
+        else:
+            start_position = self._rng.integers(0, chromosome_length - length)
         end_position = min(start_position + length, chromosome_length)
 
         assert (
@@ -172,14 +174,16 @@ class CNVPerBatchGenerator:
         chromosome_length = self._genome.chromosome_length(chromosome)
 
         # the start position cannot be where there is already a change
-        start_array = (chrom_change != 0).astype(int)
         # the start+length position cannot be where there is already a change
-        end_array = (
-            np.roll(np.pad(chrom_change, length), -length)[length:-length] != 0
-        ).astype(int)
-        array = start_array + end_array
+        end_array = np.zeros((chromosome_length))
+        for i in range(1, length):
+            end_array += np.roll(np.pad(chrom_change, i), -i)[i:-i]
+        end_array = (end_array != 0).astype(int)
+        array = chrom_change + end_array
         # set the probability of choosing the unauthorized positions to 0, set uniform prob for the rest
         prob_mask = 1 - (array != 0).astype(int)
+        # the change can't occur at the end if there isn't length genes left
+        prob_mask[-length:] = 0
 
         # maybe none of the position can create non-overlapping gains/losses, in which case
         # we skip this chromosome
@@ -255,8 +259,11 @@ class CNVPerBatchGenerator:
         # select the start position so that the generated gain/loss does not overlap
 
         child_change = changes.copy()
+        ancestral_gains, ancestral_losses = self.return_chromosomes_ancestral(
+            child_change
+        )
 
-        for chromosome in self._chromosomes_gain:
+        for chromosome in np.setdiff1d(self._chromosomes_gain, ancestral_gains):
             # randomly drop a chromosome gain with prob p_child
             if bool(np.random.binomial(p=self.p_child, n=1)):
                 index = self._index_with_changes_child(chromosome, changes)
@@ -264,7 +271,7 @@ class CNVPerBatchGenerator:
                 if not (index is None):
                     child_change[index] = 1
 
-        for chromosome in self._chromosomes_loss:
+        for chromosome in np.setdiff1d(self._chromosomes_loss, ancestral_losses):
             # randomly drop a chromosome loss with prob p_child
             if bool(np.random.binomial(p=self.p_child, n=1)):
                 index = self._index_with_changes_child(chromosome, changes)
@@ -277,127 +284,23 @@ class CNVPerBatchGenerator:
         # (b) the anchors are differentially gained across subclones
         # (c) the anchors are more often gained than not
         child_change = self._generate_gain_anchors(child_change)
+        if (child_change == changes).all():
+            print("Child similar to ancestral, regenerating...")
+            return self.generate_child_subclone(changes)
 
         return child_change
 
+    def return_chromosomes_ancestral(self, changes):
 
-GainLossAnchor = Tuple[bool, bool]
-GeneName = str
+        df_change = pd.Series(data=changes, index=self._genome.original_index)
 
-
-class MostFrequentGainLossAnchorsEstimator:
-    """This class takes a family of subclone profiles,
-    calculates the anchors and offers a way
-    of calculating the anchors from the profiles.
-
-    The API is based on Sci-Kit Learn.
-
-    In the fitting procedure, we feed the CNV profiles and select the "gain gene"
-    and the "loss gene".
-
-    The "gain gene" is the gene with most frequent gains. Ties are
-
-    The anchor is a boolean tuple representing:
-    (is a gain in the "gain gene", is a loss on the "loss gene")
-
-    Note that if there is a loss on the "gain gene", the value in the anchor
-    is going to be False (similarly for the gain on the loss gene).
-    """
-
-    def __init__(self, gene_names: Union[Genome, Sequence[GeneName]]) -> None:
-        """
-        Args:
-            gene_names: the gene order, matching the profile vectors. Can be a Genome object or a sequence of names
-        """
-        self._gene_names: List[GeneName]
-        if isinstance(gene_names, Genome):
-            self._gene_names = gene_names.original_index.tolist()
-        else:
-            self._gene_names = list(gene_names)
-
-        # Number of genes
-        self._n_genes = len(self._gene_names)
-
-        # Flag to check whether the model is fitted before predictions
-        self._is_fitted: bool = False
-        # The gain gene name and its index. Will be set during the fitting procedure.
-        self._gene_gain_name: GeneName = None
-        self._gene_gain_index: int = None
-
-        # The loss gene name and its index. Will be set during the fitting procedure.
-        self._gene_loss_name: GeneName = None
-        self._gene_loss_index: int = None
-
-    @property
-    def gene_gain(self) -> GeneName:
-        assert self._is_fitted, "The model must be fitted first."
-        return self._gene_gain_name
-
-    @property
-    def gene_loss(self) -> GeneName:
-        assert self._is_fitted, "The model must be fitted first."
-        return self._gene_loss_name
-
-    def _set_gain_gene(self, profiles: np.ndarray) -> None:
-        gain_occurences = np.sum(profiles > 0, axis=0)  # Shape (n_genes,)
-
-        self._gene_gain_index = gain_occurences.argmax()
-        self._gene_gain_name = self._gene_names[self._gene_gain_index]
-
-    def _set_loss_gene(self, profiles: np.ndarray) -> None:
-        loss_occurences = np.sum(profiles < 0, axis=0)  # Shape (n_genes,)
-
-        self._gene_loss_index = loss_occurences.argmax()
-        self._gene_loss_name = self._gene_names[self._gene_loss_index]
-
-    def fit(self, profiles: np.ndarray) -> None:
-        """Fits the model to subclones, finding the anchor (gain and loss) genes.
-
-        Args:
-            profiles: CNV profiles, shape (n_subclones, n_genes)
-
-        Raises:
-            ValueError if the "gain gene" and the "loss gene" are the same.
-        """
-        profiles = np.asarray(profiles)
-        assert profiles.shape == (profiles.shape[0], self._n_genes), "Shape mismatch."
-
-        # Find the gain gene
-        self._set_gain_gene(profiles)
-        assert self._gene_gain_name is not None
-        assert self._gene_gain_index is not None
-
-        # Find the loss gene
-        self._set_loss_gene(profiles)
-        assert self._gene_loss_name is not None
-        assert self._gene_loss_index is not None
-
-        # Check that the gain gene and the loss gene are different
-        if self._gene_gain_name == self._gene_loss_name:
-            raise ValueError(
-                f"Gene {self._gene_gain_name} was selected to be both gain gene and the loss gene."
-            )
-
-        # Toggle the flag
-        self._is_fitted = True
-
-    def _predict_single(self, profile: np.ndarray) -> GainLossAnchor:
-        """Like `predict`  but for a single CNV profile."""
-        return (
-            profile[self._gene_gain_index] > 0,
-            profile[self._gene_loss_index] < 0,
-        )
-
-    def predict(self, profiles: np.ndarray) -> List[GainLossAnchor]:
-        """Generates anchors for given CNV profiles.
-
-        Args:
-            profiles: CNV profiles, shape (n_cells, n_genes)
-
-        Returns:
-            anchors for each cell, length n_cells
-        """
-        profiles = np.asarray(profiles)
-
-        assert self._is_fitted, "The model needs to be fit before predictions."
-        return [self._predict_single(profile) for profile in profiles]
+        chromosomes_gain, chromosomes_losses = [], []
+        for chromosome in self._chromosomes_gain:
+            chrom_change = df_change[self._genome.chromosome_index(chromosome)].values
+            if (chrom_change > 0).sum() != 0:
+                chromosomes_gain.append(chromosome)
+        for chromosome in self._chromosomes_loss:
+            chrom_change = df_change[self._genome.chromosome_index(chromosome)].values
+            if (chrom_change < 0).sum() != 0:
+                chromosomes_losses.append(chromosome)
+        return chromosomes_gain, chromosomes_losses

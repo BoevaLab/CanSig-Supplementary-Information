@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from typing import Optional, Union, List
+from typing import Optional, List
 
 from .profiles import CNVPerBatchGenerator
 

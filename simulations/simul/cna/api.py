@@ -7,8 +7,6 @@ from .gene_expression import (
 )
 from .profiles import (
     Genome,
-    CNVProfileGenerator,
-    MostFrequentGainLossAnchorsEstimator,
     CNVPerBatchGenerator,
 )
 from .sampling import (

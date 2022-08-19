@@ -97,17 +97,18 @@ class Dataset:
                     anchors=self.anchors,
                 )
             ]
-            for i in range(n_subclones - 1):
-                subclones.append(
-                    Subclone(
-                        ancestral=False,
-                        name=f"child{i+1}",
-                        batch=batch,
-                        CNVGenerator=self._CNVGenerator,
-                        anchors=self.anchors,
-                        ancestral_changes=subclones[0].profile,
+            if n_subclones > 1:
+                for i in range(n_subclones - 1):
+                    subclones.append(
+                        Subclone(
+                            ancestral=False,
+                            name=f"child{i+1}",
+                            batch=batch,
+                            CNVGenerator=self._CNVGenerator,
+                            anchors=self.anchors,
+                            ancestral_changes=subclones[0].profile,
+                        )
                     )
-                )
             # add the patient to the dataset
             dataset.append(
                 Patient(
