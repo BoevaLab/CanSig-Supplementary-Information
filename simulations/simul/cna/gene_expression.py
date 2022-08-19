@@ -55,17 +55,13 @@ def get_mask_high(adata: ad.AnnData, quantile: float = 0.9) -> np.ndarray:
 
 def _sample_gain_vector_high(n_genes: int, rng: Seed = 123) -> np.ndarray:
     """Samples gain changes from a Cauchy distribution for highly expressed genes"""
-    return truncated_cauchy_rvs(
-        loc=1.3438, scale=0.1879, a=0, b=100, size=(n_genes,), rng=rng
-    )
+    return truncated_cauchy_rvs(loc=1.5, scale=0.1, a=0, b=20, size=(n_genes,), rng=rng)
 
 
 def _sample_loss_vector_high(n_genes: int, rng: Seed = 123) -> np.ndarray:
     """Samples loss changes from a Cauchy distribution for highly expressed genes"""
     """Samples gain changes from a Cauchy distribution for highly expressed genes"""
-    return truncated_cauchy_rvs(
-        loc=0.5681, scale=0.0725, a=0, b=100, size=(n_genes,), rng=rng
-    )
+    return truncated_cauchy_rvs(loc=0.5, scale=0.1, a=0, b=20, size=(n_genes,), rng=rng)
 
 
 def _sample_gain_vector_low(n_genes: int, rng: Seed = 123) -> np.ndarray:
