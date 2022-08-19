@@ -105,17 +105,20 @@ def simulate_malignant_comp_batches(
 
 
 def drop_rarest_program(
-    all_malignant_obs: Dict[str, pd.Series], dataset: Dataset, p: float = 0.2
+    all_malignant_obs: Dict[str, pd.Series],
+    dataset: Dataset,
+    p_1: float = 0.3,
+    p_2: float = 0.5,
 ) -> Tuple[Dict[str, pd.Series], Dataset]:
 
     # get the mapping from name to patient in the dataset
     mapping_patients = dataset.name_to_patient()
 
     for patient in all_malignant_obs:
-        rarest_program = (
-            all_malignant_obs[patient].program.value_counts().sort_values().index[0]
-        )
-        if np.random.binomial(p=p, n=1, size=1):
+        sort_programs = all_malignant_obs[patient].program.value_counts().sort_values()
+        rarest_program = sort_programs.index[0]
+        second_rarest_program = sort_programs.index[1]
+        if np.random.binomial(p=p_1, n=1, size=1):
             # drop the rarest progam
             all_malignant_obs[patient] = all_malignant_obs[patient][
                 ~(all_malignant_obs[patient].program == rarest_program)
@@ -124,6 +127,18 @@ def drop_rarest_program(
             mapping_patients[patient].n_malignant_cells = all_malignant_obs[
                 patient
             ].shape[0]
+
+            # only if the rarest program was dropped is there the possibility for
+            # the second rarest to be dropped
+            if np.random.binomial(p=p_2, n=1, size=1):
+                # drop the second rarest progam
+                all_malignant_obs[patient] = all_malignant_obs[patient][
+                    ~(all_malignant_obs[patient].program == second_rarest_program)
+                ]
+                # update the number of malignant cells
+                mapping_patients[patient].n_malignant_cells = all_malignant_obs[
+                    patient
+                ].shape[0]
     return all_malignant_obs, dataset
 
 
@@ -142,7 +157,10 @@ def simulate_healthy_comp_batches(dataset: Dataset) -> Dict[str, pd.DataFrame]:
     all_healthy_obs = {}
     for patient in dataset.patients:
         clones = ["NA"] * patient.n_healthy_cells
-        cell_programs = ["NA"] * patient.n_healthy_cells
+        cell_programs = [
+            np.random.choice(["Macro", "Plasma"])
+            for _ in range(patient.n_healthy_cells)
+        ]
         malignant = ["non_malignant"] * patient.n_healthy_cells
 
         df_obs = pd.DataFrame(
@@ -330,10 +348,11 @@ def simulate_gex_healthy(
         a dictionary with the name of the simulated patient as key and the simulated counts as value
     """
     all_healthy_gex = {}
-    program = "healthy"
 
     for patient in all_healthy_obs:
         df_obs = all_healthy_obs[patient]
+
+        cell_programs = df_obs.program.ravel()
 
         # get the parameters associated with the patient
         print("Getting patient parameters")
@@ -344,8 +363,9 @@ def simulate_gex_healthy(
         print("Getting cell specific parameters")
         mean_array, dispersion_array, log_dropout_array, libsize_array = [], [], [], []
 
-        for _ in range(df_obs.shape[0]):
-
+        for program in cell_programs:
+            # here we do not draw without replacement because the number of cells we generate might
+            # be very different from the original number of cells in the patient
             cell_index = np.random.randint(zinb_params[program]["mean"].shape[0])
 
             mean_array.append(zinb_params[program]["mean"][cell_index])

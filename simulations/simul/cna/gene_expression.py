@@ -2,6 +2,7 @@
 from typing import Tuple
 import numpy as np
 import anndata as ad
+from scipy.stats import truncnorm
 
 from .types import GeneVector
 from ..rand import Seed
@@ -10,6 +11,39 @@ from ..rand import Seed
 # Type for storing numbers how CNA affects gene expression of a particular gene.
 # Shape (n_genes,)
 CNAExpressionChangeVector = GeneVector
+
+### Getting truncated cauchy because standard cauchy gives weird results
+# for FC as most gains become losses
+def truncated_cauchy_rvs(loc=0, scale=1, a=-1, b=1, size=None, rng=123):
+    """
+    Generate random samples from a truncated Cauchy distribution.
+
+    `loc` and `scale` are the location and scale parameters of the distribution.
+    `a` and `b` define the interval [a, b] to which the distribution is to be
+    limited.
+
+    With the default values of the parameters, the samples are generated
+    from the standard Cauchy distribution limited to the interval [-1, 1].
+    """
+    generator = np.random.default_rng(rng)
+    ua = np.arctan((a - loc) / scale) / np.pi + 0.5
+    ub = np.arctan((b - loc) / scale) / np.pi + 0.5
+    U = generator.uniform(ua, ub, size=size)
+    rvs = loc + scale * np.tan(np.pi * (U - 0.5))
+    return rvs
+
+
+def truncated_normal_rvs(loc=0, scale=1, a=-1, b=1, size=(1,), rng=123):
+    """
+    Generate random samples from a truncated normal distribution
+    `loc` and `scale` are the location and scale parameters of the distribution.
+    `a` and `b` define the interval [a, b] to which the distribution is to be
+    limited.
+    """
+    ua = (a - loc) / scale
+    ub = (b - loc) / scale
+    rvs = truncnorm.rvs(ua, ub, loc=loc, scale=scale, size=size, random_state=rng)
+    return rvs
 
 
 def get_mask_high(adata: ad.AnnData, quantile: float = 0.9) -> np.ndarray:
@@ -21,22 +55,17 @@ def get_mask_high(adata: ad.AnnData, quantile: float = 0.9) -> np.ndarray:
 
 def _sample_gain_vector_high(n_genes: int, rng: Seed = 123) -> np.ndarray:
     """Samples gain changes from a Cauchy distribution for highly expressed genes"""
-    generator = np.random.default_rng(rng)
-    x = generator.standard_cauchy(size=n_genes)
-    # cauchy is part of the location-scale family, so if I draw from standard cauchy just need to shift
-    # by location and multiply by scale
-    # parameters are fitted on real data
-    return 1.3538 + 0.1879 * x
+    return truncated_cauchy_rvs(
+        loc=1.3438, scale=0.1879, a=0, b=100, size=(n_genes,), rng=rng
+    )
 
 
 def _sample_loss_vector_high(n_genes: int, rng: Seed = 123) -> np.ndarray:
     """Samples loss changes from a Cauchy distribution for highly expressed genes"""
-    generator = np.random.default_rng(rng)
-    x = generator.standard_cauchy(size=n_genes)
-    # cauchy is part of the location-scale family, so if I draw from standard cauchy just need to shift
-    # by location and multiply by scale
-    # parameters are fitted on real data
-    return 0.5681 + 0.0725 * x
+    """Samples gain changes from a Cauchy distribution for highly expressed genes"""
+    return truncated_cauchy_rvs(
+        loc=0.5681, scale=0.0725, a=0, b=100, size=(n_genes,), rng=rng
+    )
 
 
 def _sample_gain_vector_low(n_genes: int, rng: Seed = 123) -> np.ndarray:
@@ -51,8 +80,17 @@ def _sample_gain_vector_low(n_genes: int, rng: Seed = 123) -> np.ndarray:
     # then you sample from the normal of the mixture that was chosen
     x = []
     for i in range(len(mixture)):
-        x.append(generator.normal(loc=mu[mixture[i]], scale=sigma[mixture[i]]))
-    return np.array(x)
+        x.append(
+            truncated_normal_rvs(
+                a=0,
+                b=5,
+                loc=mu[mixture[i]],
+                scale=sigma[mixture[i]],
+                size=(1,),
+                rng=rng,
+            )
+        )
+    return np.array(x).ravel()
 
 
 def _sample_loss_vector_low(n_genes: int, rng: Seed = 123) -> np.ndarray:
@@ -67,8 +105,17 @@ def _sample_loss_vector_low(n_genes: int, rng: Seed = 123) -> np.ndarray:
     # then you sample from the normal of the mixture that was chosen
     x = []
     for i in range(len(mixture)):
-        x.append(generator.normal(loc=mu[mixture[i]], scale=sigma[mixture[i]]))
-    return np.array(x)
+        x.append(
+            truncated_normal_rvs(
+                a=0,
+                b=5,
+                loc=mu[mixture[i]],
+                scale=sigma[mixture[i]],
+                size=(1,),
+                rng=rng,
+            )
+        )
+    return np.array(x).ravel()
 
 
 def sample_gain_vector(mask_high: np.ndarray) -> CNAExpressionChangeVector:

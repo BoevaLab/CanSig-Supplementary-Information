@@ -2,6 +2,8 @@ from .utils import (
     plot_subclone_profile,
     generate_anchor_alphas,
     get_param_patient,
+    plot_cnv_heatmap,
+    add_chemistry_obs,
 )
 
 from .simulate_utils import (
