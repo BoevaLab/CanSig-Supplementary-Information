@@ -1,3 +1,4 @@
+from lib2to3.pgen2.token import OP
 import pandas as pd
 import anndata as ad
 import scanpy as sc
@@ -87,13 +88,20 @@ def plot_cnv_heatmap(
 
 
 ######### Prob distributions ############
-def generate_anchor_alphas(anchors: List[str]) -> Dict[Tuple, List[int]]:
+def generate_anchor_alphas(
+    anchors: List[str],
+    start_alpha: List[int] = [5, 5, 5],
+    alpha_add: int = 10,
+) -> Dict[Tuple, List[int]]:
     """Function to generate the alphas for the dirichlet distribution associated with each anchor
     combination (2^n_anchors)
 
     Args:
 
         anchors: the list of anchors
+        start_alpha: optionally, an initial alpha distribution to start from. Eg, if you want to create a "rare"
+            program, you can start off with (10, 10, 5). Defaults to (5, 5, 5)
+        alpha_add: optionally, the alpha to add when the anchor is gained. Defaults to 10.
 
     Returns:
 
@@ -101,15 +109,14 @@ def generate_anchor_alphas(anchors: List[str]) -> Dict[Tuple, List[int]]:
         (eg (True, False, True) if anchor 1 and 3 are gained)
         and the associated alphas as value
 
-    Note:
-
-        right now we hardcode 20 as alpha is the anchor is gained and 1 if not
     """
     l = [False, True]
     anchor_profiles = list(itertools.product(l, repeat=len(anchors)))
     alphas = {}
     for profile in anchor_profiles:
-        alphas[profile] = [20 if profile[i] else 1 for i in range(len(profile))]
+        alphas[profile] = [
+            x + alpha_add if profile[i] else x for i, x in enumerate(start_alpha)
+        ]
     return alphas
 
 
@@ -140,11 +147,12 @@ def get_param_patient(
         "Plasma": "Plasma",
         "TCD4": "program1",
         "TCD8": "program2",
-        "Tgd": "program3",
+        "Tgd": "program2",
+        "TZBTB16": "program3",
     }
 
     params = {}
-    for ct in ["Macro", "Plasma", "TCD4", "TCD8", "Tgd"]:
+    for ct in ["Macro", "Plasma", "TCD4", "TCD8", "Tgd", "TZBTB16"]:
         ind = np.where((adata.obs.sample_id == patient) & (adata.obs.celltype == ct))[0]
         params[mapping_params[ct]] = model.get_likelihood_parameters(
             n_samples=1, indices=ind

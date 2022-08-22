@@ -20,7 +20,7 @@ def get_zinb_gex(
     log_dropout_array: np.ndarray,
     libsize_array: np.ndarray,
 ) -> np.ndarray:
-    """Returns a sampled counts matrix using a ZINB and multiplying by observed library size
+    """Returns a sampled counts matrix using a ZINB corrected by lib size
 
     Args:
 
@@ -33,9 +33,8 @@ def get_zinb_gex(
 
         x the sampled count matrix
     """
-
-    # first draw from a gamma distribution
-    w = np.random.gamma(mean_array, dispersion_array)
+    # draw from a gamma distribution
+    w = np.random.gamma(dispersion_array, mean_array / dispersion_array)
     # then sample from a poisson using the gamma to obtain a negative binomial
     x = np.random.poisson(w)
     # to turn into a ZINB, get a mask using the dropout probability
@@ -43,11 +42,6 @@ def get_zinb_gex(
     mask = 1 - np.random.binomial(np.ones((ps.shape)).astype(int), ps)
     # finally get the sampled expression
     x = mask * x
-    # now we transform the sampled counts so they fit the original size
-    # TODO(Josephine): think about a way of multiplying the mu by the libsize and sampling from
-    # that distribution as it is more correct (issue being making sure the dispersion and
-    # dropout correspond to the new mu)
-    x = np.round((x.T / x.sum(axis=1)).T * libsize_array)
     return x
 
 
@@ -111,35 +105,33 @@ def drop_rarest_program(
     p_2: float = 0.5,
 ) -> Tuple[Dict[str, pd.Series], Dataset]:
 
-    # get the mapping from name to patient in the dataset
     mapping_patients = dataset.name_to_patient()
+    new_obs = {}
 
     for patient in all_malignant_obs:
-        sort_programs = all_malignant_obs[patient].program.value_counts().sort_values()
+        new_obs[patient] = all_malignant_obs[patient].copy()
+        sort_programs = new_obs[patient].program.value_counts().sort_values()
         rarest_program = sort_programs.index[0]
         second_rarest_program = sort_programs.index[1]
         if np.random.binomial(p=p_1, n=1, size=1):
+            print("hi")
             # drop the rarest progam
-            all_malignant_obs[patient] = all_malignant_obs[patient][
-                ~(all_malignant_obs[patient].program == rarest_program)
+            new_obs[patient] = new_obs[patient][
+                ~(new_obs[patient].program == rarest_program)
             ]
             # update the number of malignant cells
-            mapping_patients[patient].n_malignant_cells = all_malignant_obs[
-                patient
-            ].shape[0]
+            mapping_patients[patient].n_malignant_cells = new_obs[patient].shape[0]
 
             # only if the rarest program was dropped is there the possibility for
             # the second rarest to be dropped
             if np.random.binomial(p=p_2, n=1, size=1):
                 # drop the second rarest progam
-                all_malignant_obs[patient] = all_malignant_obs[patient][
-                    ~(all_malignant_obs[patient].program == second_rarest_program)
+                new_obs[patient] = new_obs[patient][
+                    ~(new_obs[patient].program == second_rarest_program)
                 ]
                 # update the number of malignant cells
-                mapping_patients[patient].n_malignant_cells = all_malignant_obs[
-                    patient
-                ].shape[0]
-    return all_malignant_obs, dataset
+                mapping_patients[patient].n_malignant_cells = new_obs[patient].shape[0]
+    return new_obs, dataset
 
 
 def simulate_healthy_comp_batches(dataset: Dataset) -> Dict[str, pd.DataFrame]:
@@ -375,10 +367,10 @@ def simulate_gex_healthy(
 
         print("Starting ZINB sampling")
         batch_gex = get_zinb_gex(
-            mean_array=mean_array,
-            dispersion_array=dispersion_array,
-            log_dropout_array=log_dropout_array,
-            libsize_array=libsize_array,
+            mean_array=np.array(mean_array),
+            dispersion_array=np.array(dispersion_array),
+            log_dropout_array=np.array(log_dropout_array),
+            libsize_array=np.array(libsize_array),
         )
         all_healthy_gex[patient] = batch_gex
 
