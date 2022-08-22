@@ -17,7 +17,7 @@ $ pip install scib
 $ pip install -e CanSig
 ```
 
-You will also need to install kBET using R:
+If you want to run the test for the benchmark you will also need to install kBET using R:
 
 ```
 $ R

@@ -14,7 +14,6 @@ from scanpy.neighbors import (
     _get_indices_distances_from_sparse_matrix,
     _get_indices_distances_from_dense_matrix,
 )
-from benchmark.utils import diffusion_nn, diffusion_conn
 from scipy.sparse import issparse
 from sklearn.metrics import (
     adjusted_rand_score,
@@ -26,6 +25,7 @@ from sklearn.metrics import (
 
 from benchmark._cluster import LeidenNClusterConfig, LeidenNCluster
 from benchmark.models import ModelConfig
+from benchmark.utils import diffusion_nn, diffusion_conn
 
 
 @dataclass
@@ -71,7 +71,7 @@ def run_metrics(adata: AnnData, config: ModelConfig, metric_config: MetricsConfi
 
 
 def kbet(
-    adata: AnnData, latent_key: str, label_key: str, batch_key: str
+        adata: AnnData, latent_key: str, label_key: str, batch_key: str
 ) -> Dict[str, float]:
     """This implementation of kBet is taken from scib and combined with the
     kbet_single implementation from scETM."""
@@ -93,7 +93,7 @@ def kbet(
 
         # check if neighborhood size too small or only one batch in subset
         if np.logical_or(
-            adata_sub.n_obs < 10, len(adata_sub.obs[batch_key].cat.categories) == 1
+                adata_sub.n_obs < 10, len(adata_sub.obs[batch_key].cat.categories) == 1
         ):
             print(f"{clus} consists of a single batch or is too small. Skip.")
             score = np.nan
@@ -182,7 +182,7 @@ def compute_nmi(adata: AnnData, group_key: str, cluster_key: str) -> Optional[fl
 
 
 def compute_asw(
-    adata: AnnData, group_key: str, latent_key: str
+        adata: AnnData, group_key: str, latent_key: str
 ) -> Dict[str, Optional[float]]:
     if latent_key not in adata.obsm_keys():
         return {"average_silhouette_width": None}
@@ -193,7 +193,7 @@ def compute_asw(
 
 
 def compute_calinski_harabasz(
-    adata: AnnData, group_key: str, latent_key: str
+        adata: AnnData, group_key: str, latent_key: str
 ) -> Dict[str, Optional[float]]:
     if latent_key not in adata.obsm_keys():
         return {"calinski_harabasz_score": None}
@@ -202,7 +202,7 @@ def compute_calinski_harabasz(
 
 
 def compute_davies_bouldin(
-    adata: AnnData, group_key: str, latent_key: str
+        adata: AnnData, group_key: str, latent_key: str
 ) -> Dict[str, Optional[float]]:
     if latent_key not in adata.obsm_keys():
         return {"davies_bouldin": None}
@@ -211,7 +211,7 @@ def compute_davies_bouldin(
 
 
 def compute_ari_nmi(
-    adata: AnnData, metric_config: MetricsConfig
+        adata: AnnData, metric_config: MetricsConfig
 ) -> Dict[str, Optional[float]]:
     metrics = {}
     for random_seed in range(metric_config.n_random_seeds):
@@ -222,11 +222,12 @@ def compute_ari_nmi(
             cluster_algo = LeidenNCluster(leiden_config)
             cluster_algo.fit_predict(adata, key_added=metric_config.cluster_key)
         except ValueError as e:
-            # Scanorama seems to produce latent spaces that leiden can't cluster into 4.
             print(e)
-
-        ari = compute_ari(adata, metric_config.group_key, metric_config.cluster_key)
-        nmi = compute_nmi(adata, metric_config.group_key, metric_config.cluster_key)
+            ari = None
+            nmi = None
+        else:
+            ari = compute_ari(adata, metric_config.group_key, metric_config.cluster_key)
+            nmi = compute_nmi(adata, metric_config.group_key, metric_config.cluster_key)
 
         metrics[f"ari_{random_seed}"] = ari
         metrics[f"nmi_{random_seed}"] = nmi
