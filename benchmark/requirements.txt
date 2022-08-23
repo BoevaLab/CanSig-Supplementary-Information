@@ -13,6 +13,4 @@ scETM
 scanorama
 mnnpy
 scgen
-trvae
-trvaep
 desc
