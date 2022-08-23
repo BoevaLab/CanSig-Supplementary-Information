@@ -29,7 +29,7 @@ def run_model(adata: AnnData, cfg) -> Tuple[AnnData, float]:
     if cfg.name == "bbknn":
         adata = run_bbknn(adata, config=cfg)
     elif cfg.name == "scvi":
-        adata = run_scvi(adata, cfg)
+        adata = run_scvi(adata, config=cfg)
     elif cfg.name == "scanorama":
         adata = run_scanorama(adata, config=cfg)
     elif cfg.name == "harmony":
@@ -38,6 +38,8 @@ def run_model(adata: AnnData, cfg) -> Tuple[AnnData, float]:
         adata = run_cansig(adata, config=cfg)
     elif cfg.name == "nmm":
         adata = run_mnn(adata, config=cfg)
+    elif cfg.name == "combat":
+        adata = run_combat(adata, config=cfg)
     else:
         raise NotImplementedError(f"{cfg.name} is not implemented.")
     run_time = timer() - start
@@ -186,7 +188,7 @@ class CanSigConfig(ModelConfig):
     celltype_key: str = "program"
 
 
-def run_cansig(adata: AnnData, config: CanSigConfig)->AnnData:
+def run_cansig(adata: AnnData, config: CanSigConfig) -> AnnData:
     bdata = CanSig.preprocessing(
         adata.copy(),
         n_highly_variable_genes=config.n_top_genes,
@@ -245,7 +247,7 @@ class MNNConfig(ModelConfig):
     n_top_genes: int = 2000
 
 
-def run_mnn(adata: AnnData, config: MNNConfig)->AnnData:
+def run_mnn(adata: AnnData, config: MNNConfig) -> AnnData:
     split, categories = split_batches(adata, config.batch_key, return_categories=True)
 
     bdata = adata.copy()
@@ -263,6 +265,24 @@ def run_mnn(adata: AnnData, config: MNNConfig)->AnnData:
 
     return corrected
 
+
+@dataclass
+class CombatConfig(ModelConfig):
+    name: str = "combat"
+    covariates: Optional[List[str]] = None
+    n_top_genes: int = 2000
+
+def run_combat(adata, config: CombatConfig) -> AnnData:
+
+    sc.pp.normalize_total(adata, target_sum=1e4)
+    sc.pp.log1p(adata)
+    sc.pp.highly_variable_genes(adata, n_top_genes=config.n_top_genes)
+    adata = adata[:, adata.var["highly_variable"]].copy()
+
+    X = sc.pp.combat(adata, config.batch_key, covariates=config.covariates,
+                     inplace=False)
+    adata.obsm[config.latent_key] = X
+    return adata
 
 def save_model_history(model: CanSig, name: str = ""):
     modules = {

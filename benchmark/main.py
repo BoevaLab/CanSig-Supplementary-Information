@@ -18,7 +18,7 @@ from models import (
     CanSigConfig,
     HarmonyConfig,
     MNNConfig,
-    run_model,
+    run_model, CombatConfig,
 )
 from utils import save_latent, plot_integration, get_gres, get_partition
 
@@ -62,6 +62,7 @@ cs.store(group="model", name="scanorama", node=ScanoramaConfig)
 cs.store(group="model", name="cansig", node=CanSigConfig)
 cs.store(group="model", name="harmony", node=HarmonyConfig)
 cs.store(group="model", name="mnn", node=MNNConfig)
+cs.store(group="model", name="combat", node=CombatConfig)
 
 
 

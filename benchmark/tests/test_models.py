@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from benchmark.models import (run_bbknn, BBKNNConfig, SCVIConfig, run_scvi,
-                              ScanoramaConfig, run_scanorama)
+                              ScanoramaConfig, run_scanorama, CombatConfig, run_combat)
 
 
 @pytest.fixture
@@ -35,3 +35,7 @@ def test_scanorama(adata):
     assert config.latent_key in adata.obsm_keys()
 
 
+def test_combat(adata):
+    config = CombatConfig()
+    adata = run_combat(adata, config)
+    assert config.latent_key in adata.obsm_keys()
