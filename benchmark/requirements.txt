@@ -1,3 +1,5 @@
+hydra-core
+bbknn
 anndata
 infercnvpy
 matplotlib
@@ -6,3 +8,11 @@ pandas
 pytest
 scanpy
 scvi-tools
+scib
+scETM
+scanorama
+mnnpy
+scgen
+trvae
+trvaep
+desc
