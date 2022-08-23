@@ -49,8 +49,8 @@ class BBKNNConfig(ModelConfig):
 def run_bbknn(adata: AnnData, config: BBKNNConfig) -> AnnData:
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
-    sc.tl.pca(adata)
     sc.pp.scale(adata)
+    sc.tl.pca(adata)
     bbknn.bbknn(
         adata,
         batch_key=config.batch_key,

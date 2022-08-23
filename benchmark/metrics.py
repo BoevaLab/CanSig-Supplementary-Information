@@ -42,7 +42,6 @@ def run_metrics(adata: AnnData, config: ModelConfig, metric_config: MetricsConfi
 
     compute_neighbors(
         adata,
-        config.name,
         latent_key=config.latent_key,
         n_neighbors=metric_config.n_neighbors,
     )
@@ -75,8 +74,10 @@ def kbet(
 ) -> Dict[str, float]:
     """This implementation of kBet is taken from scib and combined with the
     kbet_single implementation from scETM."""
-
-    adata_tmp = sc.pp.neighbors(adata, n_neighbors=50, use_rep=latent_key, copy=True)
+    if latent_key in adata.obsm_keys():
+        adata_tmp = sc.pp.neighbors(adata, n_neighbors=50, use_rep=latent_key, copy=True)
+    else:
+        adata_tmp = adata.copy()
     # check if pre-computed neighbours are stored in input file
     connectivities = diffusion_conn(adata_tmp, min_k=50, copy=False)
     adata_tmp.obsp["connectivities"] = connectivities
@@ -235,19 +236,9 @@ def compute_ari_nmi(
     return metrics
 
 
-def compute_neighbors(adata: AnnData, name: str, latent_key: str, n_neighbors: int):
-    if name == "bbknn":
-        distances = adata.obsp["distances"]
-        if issparse(distances):
-            knn_indices, _ = _get_indices_distances_from_sparse_matrix(
-                distances, n_neighbors=n_neighbors
-            )
-        else:
-            knn_indices, _ = _get_indices_distances_from_dense_matrix(
-                distances, n_neighbors=n_neighbors
-            )
-        adata.obsm["knn_indices"] = knn_indices
-    elif latent_key in adata.obsm.keys():
+def compute_neighbors(adata: AnnData,  latent_key: str, n_neighbors: int):
+
+    if latent_key in adata.obsm.keys():
         knn_indices = _get_knn_indices(
             adata,
             use_rep=latent_key,
@@ -255,7 +246,4 @@ def compute_neighbors(adata: AnnData, name: str, latent_key: str, n_neighbors: i
             calc_knn=True,
         )
         adata.obsm["knn_indices"] = knn_indices
-    else:
-        raise NotImplementedError(
-            "Every model, except for bbknn, should return a latent space"
-        )
+
