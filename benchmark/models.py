@@ -1,7 +1,8 @@
 import warnings
 from dataclasses import dataclass, field
+from pathlib import Path
 from timeit import default_timer as timer
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Union
 
 import bbknn
 import numpy as np
@@ -298,6 +299,7 @@ class DescConfig(ModelConfig):
     batch_size: int = 256
     tol: float = 0.005
     learning_rate: float = 500
+    save_dir: Union[str, Path] = "."
 
 
 def run_desc(adata: AnnData, config: DescConfig) -> AnnData:
@@ -315,7 +317,7 @@ def run_desc(adata: AnnData, config: DescConfig) -> AnnData:
                            n_neighbors=config.n_neighbors,
                            batch_size=config.batch_size,
                            louvain_resolution=config.res,
-                           save_dir=".",
+                           save_dir=config.save_dir,
                            do_tsne=False,
                            use_GPU=config.gpu,
                            num_Cores=8,

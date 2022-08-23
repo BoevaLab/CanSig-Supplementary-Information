@@ -14,7 +14,7 @@ def get_adata(proportion: Optional[List[int]] = None):
         proportion = [50, 200, 50, 200]
 
     N_CELLS = 500
-    adata = anndata.AnnData(X=np.zeros((N_CELLS, 1)))
+    adata = anndata.AnnData(X=np.zeros((N_CELLS, 1)), dtype="float32")
 
     means = [(0.,) * 5 + (5.,) * 5, (5.,) * 5 + (0.,) * 5]
     adata.obsm["latent"] = np.vstack(
@@ -42,7 +42,7 @@ def test_kbet(proportion):
 def test_run_metrics():
     adata = get_adata()
     model_config = ModelConfig(batch_key="batch")
-    metric_config = MetricsConfig(n_clusters=2)
+    metric_config = MetricsConfig(clustering_range=(2,))
 
     results = run_metrics(adata, config=model_config, metric_config=metric_config)
 
@@ -51,7 +51,7 @@ def test_run_metrics():
         assert key in results
 
     for metric in ["ari", "nmi"]:
-        for key in [f"{metric}_{i}" for i in range(10)]:
+        for key in [f"{metric}_2_{i}" for i in range(10)]:
             assert pytest.approx(results[key]) == 1.
 
     assert results["k_bet_acceptance_rate"] >= 0.95
