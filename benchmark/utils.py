@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 import pandas as pd
@@ -14,7 +14,7 @@ def save_latent(adata: AnnData, latent_key: str, dataset_name: str) -> None:
 
 
 def plot_integration(
-    adata: AnnData, dataset_name: str, batch_key: str, group_key: str
+        adata: AnnData, dataset_name: str, batch_key: str, group_key: str
 ) -> None:
     sc.settings.figdir = "."
     sc.tl.umap(adata)
@@ -134,7 +134,7 @@ def diffusion_conn(adata, min_k=50, copy=True, max_iterations=26):
     T_agg = T
     i = 2
     while ((M[large_comp_mask, :][:, large_comp_mask] > 0).sum(1).min() < min_k) and (
-        i < max_iterations
+            i < max_iterations
     ):
         print(f"Adding diffusion to step {i}")
         T_agg *= T
@@ -158,3 +158,10 @@ def diffusion_conn(adata, min_k=50, copy=True, max_iterations=26):
 
     else:
         return M
+
+
+def split_batches(adata: AnnData, batch_key: str) -> List[AnnData]:
+    splits = []
+    for batch in adata.obs[batch_key].cat.categories:
+        splits.append(adata[adata.obs[batch_key] == batch].copy())
+    return splits

@@ -4,7 +4,7 @@ anndata
 infercnvpy
 matplotlib
 numpy
-numba===0.56.0 #Otherwise nmm doesn't run.
+numba
 pandas
 pytest
 scanpy

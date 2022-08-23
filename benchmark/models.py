@@ -12,7 +12,8 @@ import scvi
 from anndata import AnnData
 from cansig.integration.model import CanSig
 from omegaconf import MISSING
-from scib.utils import split_batches
+
+from benchmark.utils import split_batches
 
 
 @dataclass
@@ -250,7 +251,7 @@ class MNNConfig(ModelConfig):
 
 
 def run_mnn(adata: AnnData, config: MNNConfig) -> AnnData:
-    split, categories = split_batches(adata, config.batch_key, return_categories=True)
+    split = split_batches(adata, config.batch_key)
 
     bdata = adata.copy()
     sc.pp.normalize_total(bdata, target_sum=1e4)
@@ -290,7 +291,7 @@ def run_combat(adata: AnnData, config: CombatConfig) -> AnnData:
 @dataclass
 class DescConfig(ModelConfig):
     name: str = "desc"
-    gpu: bool = False # TODO: add GPU acceleration
+    gpu: bool = False  # TODO: add GPU acceleration
     res: float = 0.8
     n_top_genes: int = 2000
     n_neighbors: int = 10
