@@ -36,16 +36,16 @@ class Config:
     hydra: Dict[str, Any] = field(
         default_factory=lambda: {
             "run": {"dir": "${results_path}/${model.name}/${run_dir:}"},
-            #"sweep": {
-            #    "dir": "${results_path}/${model.name}",
-            #    "subdir": "${run_dir:}",
-            #},
-            #"launcher": {
-            #    "mem_gb": 32,
-            #    "timeout_min": 120,
-            #    "partition": "${get_partition:${model.gpu}}",
-            #    "gres": "${get_gres:${model.gpu}}",
-            #},
+            "sweep": {
+                "dir": "${results_path}/${model.name}",
+                "subdir": "${run_dir:}",
+            },
+            "launcher": {
+                "mem_gb": 32,
+                "timeout_min": 120,
+                "partition": "${get_partition:${model.gpu}}",
+                "gres": "${get_gres:${model.gpu}}",
+            },
         }
     )
 
