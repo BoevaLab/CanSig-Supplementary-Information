@@ -247,7 +247,7 @@ def run_cansig(adata: AnnData, config: CanSigConfig) -> AnnData:
 class MNNConfig(ModelConfig):
     name: str = "nmm"
     k: int = 20
-    sigma: float = 1
+    sigma: float = 1.
     n_top_genes: int = 2000
 
 
@@ -273,17 +273,26 @@ def run_mnn(adata: AnnData, config: MNNConfig) -> AnnData:
 @dataclass
 class CombatConfig(ModelConfig):
     name: str = "combat"
-    covariates: Optional[List[str]] = None
+    cell_cycle: bool = False
     n_top_genes: int = 2000
-
+    log_counts: bool = False
 
 def run_combat(adata: AnnData, config: CombatConfig) -> AnnData:
+    covariates = []
+    if config.cell_cycle:
+        covariates += ["G2M_score", "S_score"]
+
+    if config.log_counts:
+        covariates += ["log_counts"]
+
+    covariates = covariates or None
+
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
     sc.pp.highly_variable_genes(adata, n_top_genes=config.n_top_genes)
     adata = adata[:, adata.var["highly_variable"]].copy()
 
-    X = sc.pp.combat(adata, config.batch_key, covariates=config.covariates,
+    X = sc.pp.combat(adata, config.batch_key, covariates=covariates,
                      inplace=False)
     adata.obsm[config.latent_key] = X
     return adata

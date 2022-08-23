@@ -3,7 +3,6 @@ from typing import List, Optional
 import anndata
 import numpy as np
 import pytest
-from scib.metrics import kBET
 
 from benchmark.metrics import kbet, run_metrics, MetricsConfig
 from benchmark.models import ModelConfig
@@ -33,6 +32,8 @@ def get_adata(proportion: Optional[List[int]] = None):
                                         [125, 125, 125, 125],
                                         [50, 200, 125, 125]])
 def test_kbet(proportion):
+    from scib.metrics import kBET
+
     adata = get_adata(proportion)
     res_1 = kbet(adata, latent_key="latent", batch_key="batch", label_key="program")
     res_2 = kBET(adata, embed="latent", batch_key="batch", label_key="program")
