@@ -18,7 +18,7 @@ from models import (
     CanSigConfig,
     HarmonyConfig,
     MNNConfig,
-    run_model, CombatConfig,
+    run_model, CombatConfig, DescConfig,
 )
 from utils import save_latent, plot_integration, get_gres, get_partition
 
@@ -40,12 +40,12 @@ class Config:
                 "dir": "${results_path}/${model.name}",
                 "subdir": "${run_dir:}",
             },
-            "launcher": {
-                "mem_gb": 32,
-                "timeout_min": 120,
-                "partition": "${get_partition:${model.gpu}}",
-                "gres": "${get_gres:${model.gpu}}",
-            },
+            #"launcher": {
+            #    "mem_gb": 32,
+            #    "timeout_min": 120,
+            #    "partition": "${get_partition:${model.gpu}}",
+            #    "gres": "${get_gres:${model.gpu}}",
+            #},
         }
     )
 
@@ -55,6 +55,7 @@ OmegaConf.register_new_resolver("get_gres", get_gres)
 OmegaConf.register_new_resolver("get_partition", get_partition)
 
 cs = ConfigStore.instance()
+
 cs.store(name="config", node=Config)
 cs.store(group="model", name="bbknn", node=BBKNNConfig)
 cs.store(group="model", name="scvi", node=SCVIConfig)
@@ -63,7 +64,7 @@ cs.store(group="model", name="cansig", node=CanSigConfig)
 cs.store(group="model", name="harmony", node=HarmonyConfig)
 cs.store(group="model", name="mnn", node=MNNConfig)
 cs.store(group="model", name="combat", node=CombatConfig)
-
+cs.store(group="model", name="desc", node=DescConfig)
 
 
 @hydra.main(config_name="config", config_path=None)

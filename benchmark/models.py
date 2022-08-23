@@ -40,6 +40,8 @@ def run_model(adata: AnnData, cfg) -> Tuple[AnnData, float]:
         adata = run_mnn(adata, config=cfg)
     elif cfg.name == "combat":
         adata = run_combat(adata, config=cfg)
+    elif cfg.name == "desc":
+        adata = run_desc(adata, config=cfg)
     else:
         raise NotImplementedError(f"{cfg.name} is not implemented.")
     run_time = timer() - start
@@ -272,8 +274,8 @@ class CombatConfig(ModelConfig):
     covariates: Optional[List[str]] = None
     n_top_genes: int = 2000
 
-def run_combat(adata, config: CombatConfig) -> AnnData:
 
+def run_combat(adata: AnnData, config: CombatConfig) -> AnnData:
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
     sc.pp.highly_variable_genes(adata, n_top_genes=config.n_top_genes)
@@ -283,6 +285,50 @@ def run_combat(adata, config: CombatConfig) -> AnnData:
                      inplace=False)
     adata.obsm[config.latent_key] = X
     return adata
+
+
+@dataclass
+class DescConfig(ModelConfig):
+    name: str = "desc"
+    gpu: bool = False # TODO: add GPU acceleration
+    res: float = 0.8
+    n_top_genes: int = 2000
+    n_neighbors: int = 10
+    batch_size: int = 256
+    tol: float = 0.005
+    learning_rate: float = 500
+
+
+def run_desc(adata: AnnData, config: DescConfig) -> AnnData:
+    import desc
+    # Preprocessing and parameters taken from https://github.com/eleozzr/desc/issues/28.
+    sc.pp.normalize_per_cell(adata, counts_per_cell_after=1e4)
+    sc.pp.log1p(adata)
+    sc.pp.highly_variable_genes(adata, n_top_genes=config.n_top_genes, inplace=True)
+    sc.pp.scale(adata, zero_center=True, max_value=6)
+    adata = desc.scale_bygroup(adata, groupby=config.batch_key, max_value=6)
+    adata_out = desc.train(adata,
+                           dims=[adata.shape[1], 128, 32],  # or set 256
+                           tol=config.tol,
+                           # suggest 0.005 when the dataset less than 5000
+                           n_neighbors=config.n_neighbors,
+                           batch_size=config.batch_size,
+                           louvain_resolution=config.res,
+                           save_dir=".",
+                           do_tsne=False,
+                           use_GPU=config.gpu,
+                           num_Cores=8,
+                           save_encoder_weights=False,
+                           save_encoder_step=2,
+                           use_ae_weights=False,
+                           do_umap=False,
+                           num_Cores_tsne=4,
+                           learning_rate=config.learning_rate)
+
+    adata_out.obsm[config.latent_key] = adata_out.obsm["X_Embeded_z" + str(config.res)]
+
+    return adata_out
+
 
 def save_model_history(model: CanSig, name: str = ""):
     modules = {
