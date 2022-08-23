@@ -10,7 +10,6 @@ from scETM.eval_utils import (
     calculate_kbet,
     _get_knn_indices,
 )
-from scipy.sparse import issparse
 from sklearn.metrics import (
     adjusted_rand_score,
     normalized_mutual_info_score,
@@ -175,7 +174,7 @@ def compute_asw(
         adata: AnnData, group_key: str, latent_key: str
 ) -> Dict[str, Optional[float]]:
     if latent_key not in adata.obsm_keys():
-        return {"average_silhouette_width": None}
+        return {"average_silhouette_width": np.nan}
     asw = silhouette_score(X=adata.obsm[latent_key], labels=adata.obs[group_key])
     asw = (asw + 1) / 2
 
@@ -186,7 +185,7 @@ def compute_calinski_harabasz(
         adata: AnnData, group_key: str, latent_key: str
 ) -> Dict[str, Optional[float]]:
     if latent_key not in adata.obsm_keys():
-        return {"calinski_harabasz_score": None}
+        return {"calinski_harabasz_score": np.nan}
     score = calinski_harabasz_score(adata.obsm[latent_key], adata.obs[group_key])
     return {"calinski_harabasz_score": score}
 
@@ -195,7 +194,7 @@ def compute_davies_bouldin(
         adata: AnnData, group_key: str, latent_key: str
 ) -> Dict[str, Optional[float]]:
     if latent_key not in adata.obsm_keys():
-        return {"davies_bouldin": None}
+        return {"davies_bouldin": np.nan}
     score = davies_bouldin_score(adata.obsm[latent_key], adata.obs[group_key])
     return {"davies_bouldin": score}
 
