@@ -23,9 +23,9 @@ from sklearn.metrics import (
     davies_bouldin_score,
 )
 
-from benchmark._cluster import LeidenNClusterConfig, LeidenNCluster
-from benchmark.models import ModelConfig
-from benchmark.utils import diffusion_nn, diffusion_conn
+from _cluster import LeidenNClusterConfig, LeidenNCluster
+from models import ModelConfig
+from utils import diffusion_nn, diffusion_conn
 
 
 @dataclass

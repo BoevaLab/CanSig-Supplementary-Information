@@ -8,7 +8,6 @@ pandas
 pytest
 scanpy
 scvi-tools
-scib
 scETM
 scanorama
 mnnpy
