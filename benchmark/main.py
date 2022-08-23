@@ -40,12 +40,12 @@ class Config:
                 "dir": "${results_path}/${model.name}",
                 "subdir": "${run_dir:}",
             },
-            #"launcher": {
-            #    "mem_gb": 32,
-            #    "timeout_min": 120,
-            #    "partition": "${get_partition:${model.gpu}}",
-            #    "gres": "${get_gres:${model.gpu}}",
-            #},
+            "launcher": {
+                "mem_gb": 32,
+                "timeout_min": 120,
+                "partition": "${get_partition:${model.gpu}}",
+                "gres": "${get_gres:${model.gpu}}",
+            },
         }
     )
 
