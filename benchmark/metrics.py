@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -9,10 +9,6 @@ from anndata import AnnData
 from scETM.eval_utils import (
     calculate_kbet,
     _get_knn_indices,
-)
-from scanpy.neighbors import (
-    _get_indices_distances_from_sparse_matrix,
-    _get_indices_distances_from_dense_matrix,
 )
 from scipy.sparse import issparse
 from sklearn.metrics import (
@@ -34,7 +30,7 @@ class MetricsConfig:
     group_key: str = "program"
     cluster_key: str = "leiden"
     n_random_seeds: int = 10
-    n_clusters: int = 3
+    clustering_range: Tuple[int] = tuple(range(2, 6))
 
 
 def run_metrics(adata: AnnData, config: ModelConfig, metric_config: MetricsConfig):
@@ -74,8 +70,10 @@ def kbet(
 ) -> Dict[str, float]:
     """This implementation of kBet is taken from scib and combined with the
     kbet_single implementation from scETM."""
+    adata.strings_to_categoricals()
     if latent_key in adata.obsm_keys():
-        adata_tmp = sc.pp.neighbors(adata, n_neighbors=50, use_rep=latent_key, copy=True)
+        adata_tmp = sc.pp.neighbors(adata, n_neighbors=50, use_rep=latent_key,
+                                    copy=True)
     else:
         adata_tmp = adata.copy()
     # check if pre-computed neighbours are stored in input file
@@ -166,21 +164,12 @@ def kbet(
     return {"k_bet_acceptance_rate": final_score}
 
 
-def compute_ari(adata: AnnData, group_key: str, cluster_key: str) -> Optional[float]:
-    if cluster_key in adata.obs.columns:
-        return adjusted_rand_score(adata.obs[group_key], adata.obs[cluster_key])
-    else:
-        return None
+def compute_ari(adata: AnnData, group_key: str, cluster_key: str) -> float:
+    return adjusted_rand_score(adata.obs[group_key], adata.obs[cluster_key])
 
 
-def compute_nmi(adata: AnnData, group_key: str, cluster_key: str) -> Optional[float]:
-    if cluster_key in adata.obs.columns:
-        return normalized_mutual_info_score(
-            adata.obs[group_key], adata.obs[cluster_key]
-        )
-    else:
-        return None
-
+def compute_nmi(adata: AnnData, group_key: str, cluster_key: str) -> float:
+    return normalized_mutual_info_score(adata.obs[group_key], adata.obs[cluster_key])
 
 def compute_asw(
         adata: AnnData, group_key: str, latent_key: str
@@ -215,29 +204,31 @@ def compute_ari_nmi(
         adata: AnnData, metric_config: MetricsConfig
 ) -> Dict[str, Optional[float]]:
     metrics = {}
-    for random_seed in range(metric_config.n_random_seeds):
-        try:
-            leiden_config = LeidenNClusterConfig(
-                random_state=random_seed, clusters=metric_config.n_clusters
-            )
-            cluster_algo = LeidenNCluster(leiden_config)
-            cluster_algo.fit_predict(adata, key_added=metric_config.cluster_key)
-        except ValueError as e:
-            print(e)
-            ari = None
-            nmi = None
-        else:
-            ari = compute_ari(adata, metric_config.group_key, metric_config.cluster_key)
-            nmi = compute_nmi(adata, metric_config.group_key, metric_config.cluster_key)
+    for k in metric_config.clustering_range:
+        for random_seed in range(metric_config.n_random_seeds):
+            try:
+                leiden_config = LeidenNClusterConfig(
+                    random_state=random_seed, clusters=k
+                )
+                cluster_algo = LeidenNCluster(leiden_config)
+                cluster_algo.fit_predict(adata, key_added=metric_config.cluster_key)
+            except ValueError as e:
+                print(e)
+                ari = np.nan
+                nmi = np.nan
+            else:
+                ari = compute_ari(adata, metric_config.group_key,
+                                  metric_config.cluster_key)
+                nmi = compute_nmi(adata, metric_config.group_key,
+                                  metric_config.cluster_key)
 
-        metrics[f"ari_{random_seed}"] = ari
-        metrics[f"nmi_{random_seed}"] = nmi
+            metrics[f"ari_{k}_{random_seed}"] = ari
+            metrics[f"nmi_{k}_{random_seed}"] = nmi
 
     return metrics
 
 
-def compute_neighbors(adata: AnnData,  latent_key: str, n_neighbors: int):
-
+def compute_neighbors(adata: AnnData, latent_key: str, n_neighbors: int):
     if latent_key in adata.obsm.keys():
         knn_indices = _get_knn_indices(
             adata,
@@ -246,4 +237,3 @@ def compute_neighbors(adata: AnnData,  latent_key: str, n_neighbors: int):
             calc_knn=True,
         )
         adata.obsm["knn_indices"] = knn_indices
-

@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass, field
 from timeit import default_timer as timer
 from typing import Tuple, List, Optional
@@ -11,6 +12,7 @@ import scvi
 from anndata import AnnData
 from cansig.integration.model import CanSig
 from omegaconf import MISSING
+from scib.utils import split_batches
 
 
 @dataclass
@@ -34,6 +36,8 @@ def run_model(adata: AnnData, cfg) -> Tuple[AnnData, float]:
         adata = run_harmony(adata, config=cfg)
     elif cfg.name == "cansig":
         adata = run_cansig(adata, config=cfg)
+    elif cfg.name == "nmm":
+        adata = run_mnn(adata, config=cfg)
     else:
         raise NotImplementedError(f"{cfg.name} is not implemented.")
     run_time = timer() - start
@@ -120,6 +124,7 @@ def run_scanorama(adata: AnnData, config: ScanoramaConfig) -> AnnData:
         approx=config.approx,
         alpha=config.alpha,
     )
+    return adata
 
 
 @dataclass
@@ -181,7 +186,7 @@ class CanSigConfig(ModelConfig):
     celltype_key: str = "program"
 
 
-def run_cansig(adata: AnnData, config: CanSigConfig):
+def run_cansig(adata: AnnData, config: CanSigConfig)->AnnData:
     bdata = CanSig.preprocessing(
         adata.copy(),
         n_highly_variable_genes=config.n_top_genes,
@@ -230,6 +235,33 @@ def run_cansig(adata: AnnData, config: CanSigConfig):
     adata.obsm[config.latent_key] = model.get_latent_representation()
 
     return adata
+
+
+@dataclass
+class MNNConfig(ModelConfig):
+    name: str = "nmm"
+    k: int = 20
+    sigma: float = 1
+    n_top_genes: int = 2000
+
+
+def run_mnn(adata: AnnData, config: MNNConfig)->AnnData:
+    split, categories = split_batches(adata, config.batch_key, return_categories=True)
+
+    bdata = adata.copy()
+    sc.pp.normalize_total(bdata, target_sum=1e4)
+    sc.pp.log1p(bdata)
+    sc.pp.highly_variable_genes(bdata, n_top_genes=config.n_top_genes)
+    hvg = bdata.var.index[bdata.var["highly_variable"]].tolist()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        corrected, _, _ = sce.pp.mnn_correct(*split, var_subset=hvg)
+    corrected = corrected[0].concatenate(corrected[1:])
+
+    corrected.obsm[config.latent_key] = corrected.X
+
+    return corrected
 
 
 def save_model_history(model: CanSig, name: str = ""):
