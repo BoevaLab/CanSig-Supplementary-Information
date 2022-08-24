@@ -106,11 +106,79 @@ def run_scanvi(adata: AnnData, config: ScanVIConfig) -> AnnData:
 
 @dataclass
 class TrVAEpConfig(ModelConfig):
-    raise NotImplementedError
+    name: str = "trvaep"
+    n_top_genes: int = 3000
+    n_latent: int = 10
+    alpha: float = 1e-4
+    layer1: int = 64
+    layer2: int = 32
+    seed: int = 42  # Random seed
+    # Training params
+    epochs: int = 300
+    batch_size: int = 1024
+    early_patience: int = 50
+    learning_rate: float = 1e-3
+
+
+def _trvaep_normalize(adata: AnnData, n_top_genes: int) -> AnnData:
+    sc.pp.normalize_per_cell(adata)
+    sc.pp.log1p(adata)
+    sc.pp.highly_variable_genes(adata, n_top_genes=n_top_genes)
+    adata = adata[:, adata.var['highly_variable']]
+    return adata
 
 
 def run_trvaep(adata: AnnData, config: TrVAEpConfig) -> AnnData:
-    raise NotImplementedError
+    """trVAE (PyTorch version) wrapper function. It's a slightly modified scIB code."""
+    import trvaep
+    from scipy.sparse import issparse
+
+    n_batches = adata.obs[config.batch_key].nunique()
+
+    adata = _trvaep_normalize(adata, n_top_genes=config.n_top_genes)
+
+    # Densify the data matrix
+    if issparse(adata.X):
+        adata.X = adata.X.A
+
+    model = trvaep.CVAE(
+        adata.n_vars,
+        num_classes=n_batches,
+        encoder_layer_sizes=[config.layer1, config.layer2],  # Originally [64, 32]
+        decoder_layer_sizes=[config.layer2, config.layer1],  # Originally [32, 64]
+        latent_dim=config.n_latent,
+        alpha=config.alpha,
+        use_mmd=True,
+        beta=1,
+        output_activation="ReLU",
+    )
+
+    # Note: set seed for reproducibility of results
+    trainer = trvaep.Trainer(
+        model,
+        adata,
+        condition_key=config.batch_key,
+        seed=config.seed,
+        learning_rate=config.learning_rate
+    )
+
+    trainer.train_trvae(
+        n_epochs=config.epochs,
+        batch_size=config.batch_size,
+        early_patience=config.early_patience
+    )
+
+    # Get the dominant batch covariate
+    main_batch = adata.obs[config.batch_key].value_counts().idxmax()
+
+    # Get latent representation
+    latent_y = model.get_y(
+        adata.X,
+        c=model.label_encoder.transform(np.tile(np.array([main_batch]), len(adata))),
+    )
+    adata.obsm[config.latent_key] = latent_y
+
+    return adata
 
 
 class ScGENConfig(ModelConfig):

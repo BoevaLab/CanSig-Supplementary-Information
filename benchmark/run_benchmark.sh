@@ -15,3 +15,6 @@ python main.py hydra/launcher=submitit_slurm +model=scvi model.n_latent=2,4,6,8 
 # Run Dhaka
 python main.py hydra/launcher=submitit_slurm +model=dhaka model.n_latent=3,5 model.epochs=5,10,30 model.scale_reconstruction_loss=true,false --multirun &
 
+# Run trVAEp
+python main.py hydra/launcher=submitit_slurm +model=trvaep model.n_latent=5,10 model.epochs=100,300 model.learning_rate=0.001,0.0001 --multirun &
+
