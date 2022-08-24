@@ -4,7 +4,7 @@ import anndata
 import numpy as np
 import pytest
 
-from benchmark.metrics import kbet, run_metrics, MetricsConfig
+from benchmark.metrics import run_metrics, MetricsConfig
 from benchmark.models import ModelConfig
 
 
@@ -31,13 +31,6 @@ def get_adata(proportion: Optional[List[int]] = None):
 @pytest.mark.parametrize("proportion", [[50, 200, 50, 200],
                                         [125, 125, 125, 125],
                                         [50, 200, 125, 125]])
-def test_kbet(proportion):
-    from scib.metrics import kBET
-
-    adata = get_adata(proportion)
-    res_1 = kbet(adata, latent_key="latent", batch_key="batch", label_key="program")
-    res_2 = kBET(adata, embed="latent", batch_key="batch", label_key="program")
-    assert pytest.approx(res_1["k_bet_acceptance_rate"], abs=0.02) == res_2
 
 
 def test_run_metrics():
