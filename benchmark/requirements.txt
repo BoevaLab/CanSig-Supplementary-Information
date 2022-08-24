@@ -1,8 +1,16 @@
+hydra-core
+bbknn
 anndata
 infercnvpy
 matplotlib
 numpy
+numba
 pandas
 pytest
 scanpy
 scvi-tools
+scETM
+scanorama
+mnnpy
+scgen
+desc

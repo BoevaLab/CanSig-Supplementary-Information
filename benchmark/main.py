@@ -17,7 +17,8 @@ from models import (
     ScanoramaConfig,
     CanSigConfig,
     HarmonyConfig,
-    run_model,
+    MNNConfig,
+    run_model, CombatConfig, DescConfig,
 )
 from utils import save_latent, plot_integration, get_gres, get_partition
 
@@ -54,12 +55,16 @@ OmegaConf.register_new_resolver("get_gres", get_gres)
 OmegaConf.register_new_resolver("get_partition", get_partition)
 
 cs = ConfigStore.instance()
+
 cs.store(name="config", node=Config)
 cs.store(group="model", name="bbknn", node=BBKNNConfig)
 cs.store(group="model", name="scvi", node=SCVIConfig)
 cs.store(group="model", name="scanorama", node=ScanoramaConfig)
 cs.store(group="model", name="cansig", node=CanSigConfig)
 cs.store(group="model", name="harmony", node=HarmonyConfig)
+cs.store(group="model", name="mnn", node=MNNConfig)
+cs.store(group="model", name="combat", node=CombatConfig)
+cs.store(group="model", name="desc", node=DescConfig)
 
 
 @hydra.main(config_name="config", config_path=None)

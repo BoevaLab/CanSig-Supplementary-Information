@@ -3,9 +3,8 @@ from typing import List, Optional
 import anndata
 import numpy as np
 import pytest
-from scib.metrics import kBET
 
-from benchmark.metrics import kbet, run_metrics, MetricsConfig
+from benchmark.metrics import run_metrics, MetricsConfig
 from benchmark.models import ModelConfig
 
 
@@ -14,7 +13,7 @@ def get_adata(proportion: Optional[List[int]] = None):
         proportion = [50, 200, 50, 200]
 
     N_CELLS = 500
-    adata = anndata.AnnData(X=np.zeros((N_CELLS, 1)))
+    adata = anndata.AnnData(X=np.zeros((N_CELLS, 1)), dtype="float32")
 
     means = [(0.,) * 5 + (5.,) * 5, (5.,) * 5 + (0.,) * 5]
     adata.obsm["latent"] = np.vstack(
@@ -32,17 +31,12 @@ def get_adata(proportion: Optional[List[int]] = None):
 @pytest.mark.parametrize("proportion", [[50, 200, 50, 200],
                                         [125, 125, 125, 125],
                                         [50, 200, 125, 125]])
-def test_kbet(proportion):
-    adata = get_adata(proportion)
-    res_1 = kbet(adata, latent_key="latent", batch_key="batch", label_key="program")
-    res_2 = kBET(adata, embed="latent", batch_key="batch", label_key="program")
-    assert pytest.approx(res_1["k_bet_acceptance_rate"], abs=0.02) == res_2
 
 
 def test_run_metrics():
     adata = get_adata()
     model_config = ModelConfig(batch_key="batch")
-    metric_config = MetricsConfig(n_clusters=2)
+    metric_config = MetricsConfig(clustering_range=(2,))
 
     results = run_metrics(adata, config=model_config, metric_config=metric_config)
 
@@ -51,7 +45,7 @@ def test_run_metrics():
         assert key in results
 
     for metric in ["ari", "nmi"]:
-        for key in [f"{metric}_{i}" for i in range(10)]:
+        for key in [f"{metric}_2_{i}" for i in range(10)]:
             assert pytest.approx(results[key]) == 1.
 
     assert results["k_bet_acceptance_rate"] >= 0.95
