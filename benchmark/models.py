@@ -97,11 +97,12 @@ def run_dhaka(adata: AnnData, config: DhakaConfig) -> AnnData:
 
 @dataclass
 class ScanVIConfig(ModelConfig):
-    raise NotImplementedError
+    name: str = "scanvi"
+    malignant_only: bool = False
 
 
 def run_scanvi(adata: AnnData, config: ScanVIConfig) -> AnnData:
-    raise NotImplementedError
+    raise NotImplementedError("This method requires several celltypes to run.")
 
 
 @dataclass
@@ -182,11 +183,13 @@ def run_trvaep(adata: AnnData, config: TrVAEpConfig) -> AnnData:
 
 
 class ScGENConfig(ModelConfig):
-    raise NotImplementedError
+    name: str = "scgen"
+    malignant_only: bool = False  # Probably -- hard to be 100% sure
 
 
 def run_scgen(adata: AnnData, config: ScGENConfig) -> AnnData:
-    raise NotImplementedError
+    raise NotImplementedError("scGEN model in scIB doesn't add low-dimensional representations, "
+                              "so that the implementation is tricky. Moreover, it requires other cell types.")
 
 
 @dataclass
