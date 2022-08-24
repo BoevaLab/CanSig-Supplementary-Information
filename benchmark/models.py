@@ -74,6 +74,9 @@ def run_bbknn(adata: AnnData, config: BBKNNConfig) -> AnnData:
 class SCVIConfig(ModelConfig):
     name: str = "scvi"
     gpu: bool = True
+    covariates: Optional[List] = field(
+        default_factory=lambda: ["log_counts", "pct_counts_mt", "S_score", "G2M_score"]
+    )
     n_latent: int = 4
     n_hidden: int = 128
     n_layers: int = 1
@@ -87,7 +90,8 @@ def run_scvi(adata: AnnData, config: SCVIConfig) -> AnnData:
     sc.pp.highly_variable_genes(adata, n_top_genes=config.n_top_genes)
     bdata = adata[:, adata.var["highly_variable"]].copy()
 
-    scvi.model.SCVI.setup_anndata(bdata, layer="counts", batch_key=config.batch_key)
+    scvi.model.SCVI.setup_anndata(bdata, layer="counts", batch_key=config.batch_key,
+                                  continuous_covariate_keys=config.covariates)
     model = scvi.model.SCVI(
         bdata,
         n_latent=config.n_latent,
@@ -276,6 +280,7 @@ class CombatConfig(ModelConfig):
     cell_cycle: bool = False
     n_top_genes: int = 2000
     log_counts: bool = False
+
 
 def run_combat(adata: AnnData, config: CombatConfig) -> AnnData:
     covariates = []
