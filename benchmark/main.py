@@ -18,6 +18,10 @@ from models import (
     CanSigConfig,
     HarmonyConfig,
     MNNConfig,
+    DhakaConfig,
+    ScanVIConfig,
+    TrVAEpConfig,
+    ScGENConfig,
     run_model, CombatConfig, DescConfig,
 )
 from utils import save_latent, plot_integration, get_gres, get_partition
@@ -65,6 +69,10 @@ cs.store(group="model", name="harmony", node=HarmonyConfig)
 cs.store(group="model", name="mnn", node=MNNConfig)
 cs.store(group="model", name="combat", node=CombatConfig)
 cs.store(group="model", name="desc", node=DescConfig)
+cs.store(group="model", name="dhaka", node=DhakaConfig)
+cs.store(group="model", name="scanvi", node=ScanVIConfig)
+cs.store(group="model", name="trvaep", node=TrVAEpConfig)
+cs.store(group="model", name="scgen", node=ScGENConfig)
 
 
 @hydra.main(config_name="config", config_path=None)

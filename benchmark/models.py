@@ -44,10 +44,53 @@ def run_model(adata: AnnData, cfg) -> Tuple[AnnData, float]:
         adata = run_combat(adata, config=cfg)
     elif cfg.name == "desc":
         adata = run_desc(adata, config=cfg)
+    elif cfg.name == "dhaka":
+        adata = run_dhaka(adata, config=cfg)
+    elif cfg.name == "scanvi":
+        adata = run_scanvi(adata, config=cfg)
+    elif cfg.name == "trvaep":
+        adata = run_trvaep(adata, config=cfg)
+    elif cfg.name == "scgen":
+        adata = run_scgen(adata, config=cfg)
     else:
         raise NotImplementedError(f"{cfg.name} is not implemented.")
     run_time = timer() - start
     return adata, run_time
+
+
+@dataclass
+class DhakaConfig(ModelConfig):
+    raise NotImplementedError
+
+
+def run_dhaka(adata: AnnData, config: DhakaConfig) -> AnnData:
+    raise NotImplementedError
+
+
+@dataclass
+class ScanVIConfig(ModelConfig):
+    raise NotImplementedError
+
+
+def run_scanvi(adata: AnnData, config: ScanVIConfig) -> AnnData:
+    raise NotImplementedError
+
+
+@dataclass
+class TrVAEpConfig(ModelConfig):
+    raise NotImplementedError
+
+
+def run_trvaep(adata: AnnData, config: TrVAEpConfig) -> AnnData:
+    raise NotImplementedError
+
+
+class ScGENConfig(ModelConfig):
+    raise NotImplementedError
+
+
+def run_scgen(adata: AnnData, config: ScGENConfig) -> AnnData:
+    raise NotImplementedError
 
 
 @dataclass
