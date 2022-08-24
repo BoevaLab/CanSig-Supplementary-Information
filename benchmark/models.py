@@ -60,11 +60,39 @@ def run_model(adata: AnnData, cfg) -> Tuple[AnnData, float]:
 
 @dataclass
 class DhakaConfig(ModelConfig):
-    raise NotImplementedError
+    name: str = "dhaka"
+    gpu: bool = True
+
+    n_latent: int = 3
+    # Data preprocessing
+    n_genes: int = 5000
+    total_expression: float = 1e6
+    pseudocounts: int = 1
+    # Training
+    epochs: int = 5
+    batch_size: int = 50
+    learning_rate: float = 1e-4
+    clip_norm: float = 2.0
+    # Magic flag
+    scale_reconstruction_loss: bool = True
 
 
 def run_dhaka(adata: AnnData, config: DhakaConfig) -> AnnData:
-    raise NotImplementedError
+    import dhaka.api as dh
+
+    new_config = dh.DhakaConfig(
+        n_latent=config.n_latent,
+        n_genes=config.n_genes,
+        total_expression=config.total_expression,
+        pseudocounts=config.pseudocounts,
+        epochs=config.epochs,
+        batch_size=config.batch_size,
+        learning_rate=config.learning_rate,
+        clip_norm=config.clip_norm,
+        scale_reconstruction_loss=config.scale_reconstruction_loss
+    )
+
+    return dh.run_dhaka(adata, config=new_config, key_added=config.latent_key)
 
 
 @dataclass
