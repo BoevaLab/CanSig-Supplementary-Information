@@ -114,7 +114,6 @@ def drop_rarest_program(
         rarest_program = sort_programs.index[0]
         second_rarest_program = sort_programs.index[1]
         if np.random.binomial(p=p_1, n=1, size=1):
-            print("hi")
             # drop the rarest progam
             new_obs[patient] = new_obs[patient][
                 ~(new_obs[patient].program == rarest_program)
@@ -261,10 +260,12 @@ def simulate_gex_malignant(
 
         # we first select which genes belong to the highly/lowly expressed, as the effect of
         # gains/losses on gene expression depends on the original expression of the gene
-        mask_high = gex.get_mask_high(adata=adata, quantile=0.9)
+        mask_high = gex.get_mask_high(adata=adata, quantile=0.3)
         # simulate the effect of a gain/loss for a specific gene separately for each patient
         gain_expr = gex.sample_gain_vector(mask_high=mask_high)
         loss_expr = gex.sample_loss_vector(mask_high=mask_high)
+        pd.DataFrame(gain_expr).to_csv(f"cnvvectors/{patient}_gain.csv")
+        pd.DataFrame(loss_expr).to_csv(f"cnvvectors/{patient}_loss.csv")
 
         # retrieve the subclone profiles
         mapping_patients = dataset.name_to_patient()
