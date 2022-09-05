@@ -1,20 +1,21 @@
 """How CNA changes affect gene expression."""
 from typing import Tuple
-import numpy as np
+
 import anndata as ad
+import numpy as np
 from scipy.stats import truncnorm
 
 from .types import GeneVector
 from ..rand import Seed
 
-
 # Type for storing numbers how CNA affects gene expression of a particular gene.
 # Shape (n_genes,)
 CNAExpressionChangeVector = GeneVector
 
+
 ### Getting truncated cauchy because standard cauchy gives weird results
 # for FC as most gains become losses
-def truncated_cauchy_rvs(loc=0, scale=1, a=-1, b=1, size=None, rng=123):
+def truncated_cauchy_rvs(rng: Seed, loc=0., scale=1., a=-1., b=1., size=None):
     """
     Generate random samples from a truncated Cauchy distribution.
 
@@ -33,16 +34,19 @@ def truncated_cauchy_rvs(loc=0, scale=1, a=-1, b=1, size=None, rng=123):
     return rvs
 
 
-def truncated_normal_rvs(loc=0, scale=1, a=-1, b=1, size=(1,), rng=123):
+def truncated_normal_rvs(rng: Seed, loc=0., scale=1., a=-1., b=1., size=(1,)):
     """
     Generate random samples from a truncated normal distribution
     `loc` and `scale` are the location and scale parameters of the distribution.
     `a` and `b` define the interval [a, b] to which the distribution is to be
     limited.
     """
+    generator = np.random.default_rng(rng)
+    scipy_truncnorm = truncnorm
+    scipy_truncnorm.random_state = generator
     ua = (a - loc) / scale
     ub = (b - loc) / scale
-    rvs = truncnorm.rvs(ua, ub, loc=loc, scale=scale, size=size, random_state=rng)
+    rvs = scipy_truncnorm.rvs(ua, ub, loc=loc, scale=scale, size=size, random_state=rng)
     return rvs
 
 
@@ -53,17 +57,17 @@ def get_mask_high(adata: ad.AnnData, quantile: float = 0.9) -> np.ndarray:
     return mask_high
 
 
-def _sample_gain_vector_high(n_genes: int, rng: Seed = 123) -> np.ndarray:
+def _sample_gain_vector_high(n_genes: int, rng: Seed) -> np.ndarray:
     """Samples gain changes from a Cauchy distribution for highly expressed genes"""
-    return truncated_cauchy_rvs(loc=1.5, scale=0.1, a=0, b=10, size=(n_genes,), rng=rng)
+    return truncated_cauchy_rvs(rng=rng, loc=1.5, scale=0.1, a=0, b=10, size=(n_genes,))
 
 
-def _sample_loss_vector_high(n_genes: int, rng: Seed = 123) -> np.ndarray:
+def _sample_loss_vector_high(n_genes: int, rng: Seed) -> np.ndarray:
     """Samples gain changes from a Cauchy distribution for highly expressed genes"""
-    return truncated_cauchy_rvs(loc=0.5, scale=0.1, a=0, b=10, size=(n_genes,), rng=rng)
+    return truncated_cauchy_rvs(rng=rng, loc=0.5, scale=0.1, a=0, b=10, size=(n_genes,))
 
 
-def _sample_gain_vector_low(n_genes: int, rng: Seed = 123) -> np.ndarray:
+def _sample_gain_vector_low(n_genes: int, rng: Seed) -> np.ndarray:
     """Samples gain changes from a GMM for lowly expressed genes"""
     generator = np.random.default_rng(rng)
     pi = [0.2671, 0.7329]
@@ -77,18 +81,18 @@ def _sample_gain_vector_low(n_genes: int, rng: Seed = 123) -> np.ndarray:
     for i in range(len(mixture)):
         x.append(
             truncated_normal_rvs(
+                rng=np.random.randint(200),
                 a=0,
                 b=10,
                 loc=mu[mixture[i]],
                 scale=sigma[mixture[i]],
-                size=(1,),
-                rng=np.random.randint(200),
+                size=(1,)
             )
         )
     return np.array(x).ravel()
 
 
-def _sample_loss_vector_low(n_genes: int, rng: Seed = 123) -> np.ndarray:
+def _sample_loss_vector_low(n_genes: int, rng: Seed) -> np.ndarray:
     """Samples loss changes from a GMM for lowly expressed genes"""
     generator = np.random.default_rng(rng)
     pi = [0.1728, 0.8272]
@@ -102,18 +106,18 @@ def _sample_loss_vector_low(n_genes: int, rng: Seed = 123) -> np.ndarray:
     for i in range(len(mixture)):
         x.append(
             truncated_normal_rvs(
+                rng=generator,
                 a=0,
                 b=10,
                 loc=mu[mixture[i]],
                 scale=sigma[mixture[i]],
                 size=(1,),
-                rng=np.random.randint(200),
             )
         )
     return np.array(x).ravel()
 
 
-def sample_gain_vector(mask_high: np.ndarray) -> CNAExpressionChangeVector:
+def sample_gain_vector(mask_high: np.ndarray, rng: Seed) -> CNAExpressionChangeVector:
     """Generates a vector controlling by what factor expression should change if a gene copy is gained.
 
     For each gene `g`:
@@ -127,12 +131,13 @@ def sample_gain_vector(mask_high: np.ndarray) -> CNAExpressionChangeVector:
     Returns:
         a vector controlling the expression change, shape (n_genes,)
     """
+    # This ensures that we pass a single generator on.
+    rng = np.random.default_rng(rng)
     changes = np.zeros((len(mask_high),))
     n_high = len(np.where(mask_high)[0])
     n_low = len(mask_high) - n_high
-    #### WARNING: put some random seeds in here so it varies across patients
-    gain_high = _sample_gain_vector_high(n_genes=n_high, rng=np.random.randint(100))
-    gain_low = _sample_gain_vector_low(n_genes=n_low, rng=np.random.randint(100))
+    gain_high = _sample_gain_vector_high(n_genes=n_high, rng=rng)
+    gain_low = _sample_gain_vector_low(n_genes=n_low, rng=rng)
 
     changes[mask_high] = gain_high
     changes[~mask_high] = gain_low
@@ -140,7 +145,7 @@ def sample_gain_vector(mask_high: np.ndarray) -> CNAExpressionChangeVector:
     return changes
 
 
-def sample_loss_vector(mask_high: np.ndarray) -> CNAExpressionChangeVector:
+def sample_loss_vector(mask_high: np.ndarray, rng: Seed) -> CNAExpressionChangeVector:
     """Generates a vector controlling by what factor expression should change if a gene copy is lost.
 
     For each gene `g`:
@@ -154,12 +159,15 @@ def sample_loss_vector(mask_high: np.ndarray) -> CNAExpressionChangeVector:
     Returns:
         a vector controlling the expression change, shape (n_genes,)
     """
+
+    rng = np.random.default_rng(rng)
+
     changes = np.zeros((len(mask_high),))
     n_high = len(np.where(mask_high)[0])
     n_low = len(mask_high) - n_high
     #### WARNING: put some random seeds in here so it varies across patients
-    loss_high = _sample_loss_vector_high(n_genes=n_high, rng=np.random.randint(100))
-    loss_low = _sample_loss_vector_low(n_genes=n_low, rng=np.random.randint(100))
+    loss_high = _sample_loss_vector_high(n_genes=n_high, rng=rng)
+    loss_low = _sample_loss_vector_low(n_genes=n_low, rng=rng)
 
     changes[mask_high] = loss_high
     changes[~mask_high] = loss_low
@@ -168,7 +176,7 @@ def sample_loss_vector(mask_high: np.ndarray) -> CNAExpressionChangeVector:
 
 
 def perturb(
-    original: CNAExpressionChangeVector, sigma: float, rng: Seed = 542
+        original: CNAExpressionChangeVector, sigma: float, rng: Seed
 ) -> CNAExpressionChangeVector:
     """Takes an expression changes vector and perturbs it by adding Gaussian noise.
 
@@ -187,7 +195,7 @@ def perturb(
 
 
 def _create_changes_vector(
-    mask: GeneVector, change: GeneVector, fill: float = 1.0
+        mask: GeneVector, change: GeneVector, fill: float = 1.0
 ) -> GeneVector:
     """Creates a change vector using the mask, the change value (to be used if the mask is true) and the fill
     value (to be used in places where the mask is false).
@@ -215,10 +223,10 @@ def _generate_masks(changes: GeneVector) -> Tuple[GeneVector, GeneVector]:
 
 
 def change_expression(
-    expression: GeneVector,
-    changes: GeneVector,
-    gain_change: GeneVector,
-    loss_change: GeneVector,
+        expression: GeneVector,
+        changes: GeneVector,
+        gain_change: GeneVector,
+        loss_change: GeneVector,
 ) -> GeneVector:
     """Changes the expression.
 
