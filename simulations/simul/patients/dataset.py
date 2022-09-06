@@ -5,6 +5,7 @@ from typing import Optional, List, Dict
 
 from ..cna.clone import Subclone, CNVPerBatchGenerator
 from .patient import Patient
+from ..rand import Seed
 
 
 class Dataset:
@@ -23,7 +24,7 @@ class Dataset:
         n_malignant_min: int = 200,
         n_malignant_max: int = 1000,
         subclone_alpha: int = 1,
-        seed: int = 123,
+        seed: Seed = 123,
     ) -> None:
         """
         Args:

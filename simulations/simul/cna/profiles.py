@@ -204,7 +204,7 @@ class CNVPerBatchGenerator:
         """Generates a gain around anchors with prob p_anchor"""
         anchor_changes = changes.copy()
         for anchor in self.anchors:
-            if bool(np.random.binomial(p=self._p_anchor, n=1)):
+            if bool(self._rng.binomial(p=self._p_anchor, n=1)):
                 index = self._index_with_changes_anchor(anchor)
                 anchor_changes[index] = 1
         return anchor_changes
@@ -224,13 +224,13 @@ class CNVPerBatchGenerator:
 
         for chromosome in self._chromosomes_gain:
             # randomly drop a chromosome gain with prob p
-            if bool(np.random.binomial(p=self.p, n=1)):
+            if bool(self._rng.binomial(p=self.p, n=1)):
                 index = self._index_with_changes(chromosome)
-                changes[index] = 1
+                changes[index] = self._rng.choice([1, 2], p=[0.7, 0.3])
 
         for chromosome in self._chromosomes_loss:
             # randomly drop a chromosome loss with prob p
-            if bool(np.random.binomial(p=self.p, n=1)):
+            if bool(self._rng.binomial(p=self.p, n=1)):
                 index = self._index_with_changes(chromosome)
                 changes[index] = -1
         # we treat anchors separately, so that they follow three characteristics:
@@ -265,15 +265,15 @@ class CNVPerBatchGenerator:
 
         for chromosome in np.setdiff1d(self._chromosomes_gain, ancestral_gains):
             # randomly drop a chromosome gain with prob p_child
-            if bool(np.random.binomial(p=self.p_child, n=1)):
+            if bool(self._rng.binomial(p=self.p_child, n=1)):
                 index = self._index_with_changes_child(chromosome, changes)
                 # if no available spots for non-overlapping gains exist, we do not change anything
                 if not (index is None):
-                    child_change[index] = 1
+                    child_change[index] = self._rng.choice([1, 2], p=[0.7, 0.3])
 
         for chromosome in np.setdiff1d(self._chromosomes_loss, ancestral_losses):
             # randomly drop a chromosome loss with prob p_child
-            if bool(np.random.binomial(p=self.p_child, n=1)):
+            if bool(self._rng.binomial(p=self.p_child, n=1)):
                 index = self._index_with_changes_child(chromosome, changes)
                 # if no available spots for non-overlapping losses exist, we do not change anything
                 if not (index is None):

@@ -1,5 +1,5 @@
 """How CNA changes affect gene expression."""
-from typing import Tuple
+from typing import Dict
 
 import anndata as ad
 import numpy as np
@@ -65,6 +65,12 @@ def _sample_gain_vector_high(n_genes: int, rng: Seed) -> np.ndarray:
 def _sample_loss_vector_high(n_genes: int, rng: Seed) -> np.ndarray:
     """Samples gain changes from a Cauchy distribution for highly expressed genes"""
     return truncated_cauchy_rvs(rng=rng, loc=0.5, scale=0.1, a=0, b=10, size=(n_genes,))
+
+
+def sample_amplification_vector(mask_high: np.ndarray,
+                                rng: Seed) -> CNAExpressionChangeVector:
+    return truncated_cauchy_rvs(loc=1.8, scale=0.1, a=0, b=10, size=(len(mask_high),),
+                                rng=rng)
 
 
 def _sample_gain_vector_low(n_genes: int, rng: Seed) -> np.ndarray:
@@ -206,7 +212,7 @@ def _create_changes_vector(
     return change * mask + fill * (~mask)
 
 
-def _generate_masks(changes: GeneVector) -> Tuple[GeneVector, GeneVector]:
+def _generate_masks(changes: GeneVector) -> Dict[str, GeneVector]:
     """Generates boolean masks for the CNV changes.
 
     Args:
@@ -217,9 +223,10 @@ def _generate_masks(changes: GeneVector) -> Tuple[GeneVector, GeneVector]:
         boolean array, gain mask, shape (n_genes,)
         boolean array, loss mask, shape (n_genes,)
     """
-    gain_mask = changes > 0
-    loss_mask = changes < 0
-    return gain_mask, loss_mask
+    masks = {"gain": changes == 1.0,
+             "amplification": changes == 2.0,
+             "loss": changes == -1.0}
+    return masks
 
 
 def change_expression(
@@ -227,7 +234,7 @@ def change_expression(
         changes: GeneVector,
         gain_change: GeneVector,
         loss_change: GeneVector,
-) -> GeneVector:
+        amplification_change: GeneVector) -> GeneVector:
     """Changes the expression.
 
     Args:
@@ -240,9 +247,11 @@ def change_expression(
         For `gain_change` and `loss_change` you may wish to use the `perturb`ed (independently for each cell)
         version of the original vectors (see `gain_vector` and `loss_vector`).
     """
-    gain_mask, loss_mask = _generate_masks(changes)
+    masks = _generate_masks(changes)
 
-    gains_effect = _create_changes_vector(mask=gain_mask, change=gain_change)
-    losses_effect = _create_changes_vector(mask=loss_mask, change=loss_change)
+    gains_effect = _create_changes_vector(mask=masks["gain"], change=gain_change)
+    amplification_effect = _create_changes_vector(masks["amplification"],
+                                                  change=amplification_change)
+    losses_effect = _create_changes_vector(mask=masks["loss"], change=loss_change)
 
-    return expression * gains_effect * losses_effect
+    return expression * gains_effect * losses_effect * amplification_effect
