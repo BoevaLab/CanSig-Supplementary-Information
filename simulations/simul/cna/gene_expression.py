@@ -87,7 +87,7 @@ def _sample_gain_vector_low(n_genes: int, rng: Seed) -> np.ndarray:
     for i in range(len(mixture)):
         x.append(
             truncated_normal_rvs(
-                rng=np.random.randint(200),
+                rng=generator,
                 a=0,
                 b=10,
                 loc=mu[mixture[i]],
