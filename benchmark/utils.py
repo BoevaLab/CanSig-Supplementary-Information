@@ -11,6 +11,13 @@ def save_latent(adata: AnnData, latent_key: str, dataset_name: str) -> None:
     if latent_key in adata.obsm_keys():
         latent = pd.DataFrame(adata.obsm[latent_key], index=adata.obs_names)
         latent.to_csv(f"{dataset_name}_latent.csv")
+    else:
+        with open(f"{dataset_name}_distance.np", "wb") as f:
+            np.save(f, adata.obsp["distances"])
+        with open(f"{dataset_name}_connectivities.np", "wb") as f:
+            np.save(f, adata.obsp["connectivities"])
+        with open(f"{dataset_name}_neighbors.np", "wb") as f:
+            np.save(f, adata.uns["neighbors"].items())
 
 
 def plot_integration(

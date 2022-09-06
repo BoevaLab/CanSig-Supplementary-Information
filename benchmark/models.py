@@ -24,6 +24,8 @@ class ModelConfig:
     malignant_only: bool = True
     batch_key: str = "sample_id"
     latent_key: str = "latent"
+    n_top_genes: int = 2000
+
 
 
 def run_model(adata: AnnData, cfg) -> Tuple[AnnData, float]:
@@ -201,6 +203,7 @@ class BBKNNConfig(ModelConfig):
 def run_bbknn(adata: AnnData, config: BBKNNConfig) -> AnnData:
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
+    sc.pp.highly_variable_genes(adata, n_top_genes=config.n_top_genes, subset=True)
     sc.pp.scale(adata)
     sc.tl.pca(adata)
     bbknn.bbknn(
@@ -217,12 +220,11 @@ class SCVIConfig(ModelConfig):
     name: str = "scvi"
     gpu: bool = True
     covariates: Optional[List] = field(
-        default_factory=lambda: ["log_counts", "pct_counts_mt", "S_score", "G2M_score"]
+        default_factory=lambda: ["S_score", "G2M_score"]
     )
     n_latent: int = 4
     n_hidden: int = 128
     n_layers: int = 1
-    n_top_genes: int = 2000
     max_epochs: int = 400
 
 
@@ -254,7 +256,6 @@ def run_scvi(adata: AnnData, config: SCVIConfig) -> AnnData:
 class ScanoramaConfig(ModelConfig):
     name: str = "scanorama"
     knn: int = 20
-    n_top_genes: int = 2000
     sigma: float = 15.0
     approx: bool = True
     alpha: float = 0.1
@@ -282,7 +283,6 @@ def run_scanorama(adata: AnnData, config: ScanoramaConfig) -> AnnData:
 @dataclass
 class HarmonyConfig(ModelConfig):
     name: str = "harmony"
-    n_top_genes: int = 2000
     max_iter_harmony: int = 100
     max_iter_kmeans: int = 100
     theta: float = 2.0
@@ -321,14 +321,13 @@ class CanSigConfig(ModelConfig):
     n_hidden: int = 128
     n_latent_batch_effect: int = 5
     n_latent_cnv: int = 10
-    n_top_genes: int = 2000
     max_epochs: int = 400
     cnv_max_epochs: int = 400
     batch_effect_max_epochs: int = 400
     beta: float = 1.0
     batch_effect_beta: float = 1.0
     covariates: Optional[List] = field(
-        default_factory=lambda: ["log_counts", "pct_counts_mt", "S_score", "G2M_score"]
+        default_factory=lambda: ["S_score", "G2M_score"]
     )
     annealing: str = "linear"
     malignant_key: str = "malignant_key"
@@ -394,7 +393,6 @@ class MNNConfig(ModelConfig):
     name: str = "nmm"
     k: int = 20
     sigma: float = 1.
-    n_top_genes: int = 2000
 
 
 def run_mnn(adata: AnnData, config: MNNConfig) -> AnnData:
@@ -420,7 +418,6 @@ def run_mnn(adata: AnnData, config: MNNConfig) -> AnnData:
 class CombatConfig(ModelConfig):
     name: str = "combat"
     cell_cycle: bool = False
-    n_top_genes: int = 2000
     log_counts: bool = False
 
 
