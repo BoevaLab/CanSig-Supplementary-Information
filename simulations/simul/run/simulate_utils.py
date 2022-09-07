@@ -264,8 +264,6 @@ def simulate_gex_malignant(
         # simulate the effect of a gain/loss for a specific gene separately for each patient
         gain_expr = gex.sample_gain_vector(mask_high=mask_high)
         loss_expr = gex.sample_loss_vector(mask_high=mask_high)
-        pd.DataFrame(gain_expr).to_csv(f"cnvvectors/{patient}_gain.csv")
-        pd.DataFrame(loss_expr).to_csv(f"cnvvectors/{patient}_loss.csv")
 
         # retrieve the subclone profiles
         mapping_patients = dataset.name_to_patient()
@@ -277,6 +275,11 @@ def simulate_gex_malignant(
             .profile
             for i in range(len(mapping_patients[patient].subclones))
         }
+
+        gaussian_gains, gaussian_losses = gex.return_gaussian_noise(
+            adata=adata, n_cells=len(cell_programs)
+        )
+
         print("Getting cell specific parameters")
         mean_array, dispersion_array, log_dropout_array, libsize_array = [], [], [], []
 
@@ -292,8 +295,8 @@ def simulate_gex_malignant(
             mean_gex = gex.change_expression(
                 mean_gex,
                 changes=subclone_profile,
-                gain_change=gain_expr,
-                loss_change=loss_expr,
+                gain_change=gain_expr + gaussian_gains[i],
+                loss_change=loss_expr + gaussian_losses[i],
             )
             # we clip the values so that 0 entries become 0.0001. This is because we
             # sample from a gamma distribution at the beginning
