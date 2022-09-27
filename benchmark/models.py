@@ -44,10 +44,152 @@ def run_model(adata: AnnData, cfg) -> Tuple[AnnData, float]:
         adata = run_combat(adata, config=cfg)
     elif cfg.name == "desc":
         adata = run_desc(adata, config=cfg)
+    elif cfg.name == "dhaka":
+        adata = run_dhaka(adata, config=cfg)
+    elif cfg.name == "scanvi":
+        adata = run_scanvi(adata, config=cfg)
+    elif cfg.name == "trvaep":
+        adata = run_trvaep(adata, config=cfg)
+    elif cfg.name == "scgen":
+        adata = run_scgen(adata, config=cfg)
     else:
         raise NotImplementedError(f"{cfg.name} is not implemented.")
     run_time = timer() - start
     return adata, run_time
+
+
+@dataclass
+class DhakaConfig(ModelConfig):
+    name: str = "dhaka"
+    gpu: bool = True
+
+    n_latent: int = 3
+    # Data preprocessing
+    n_genes: int = 5000
+    total_expression: float = 1e6
+    pseudocounts: int = 1
+    # Training
+    epochs: int = 5
+    batch_size: int = 50
+    learning_rate: float = 1e-4
+    clip_norm: float = 2.0
+    # Magic flag
+    scale_reconstruction_loss: bool = True
+
+
+def run_dhaka(adata: AnnData, config: DhakaConfig) -> AnnData:
+    import dhaka.api as dh
+
+    new_config = dh.DhakaConfig(
+        n_latent=config.n_latent,
+        n_genes=config.n_genes,
+        total_expression=config.total_expression,
+        pseudocounts=config.pseudocounts,
+        epochs=config.epochs,
+        batch_size=config.batch_size,
+        learning_rate=config.learning_rate,
+        clip_norm=config.clip_norm,
+        scale_reconstruction_loss=config.scale_reconstruction_loss
+    )
+
+    return dh.run_dhaka(adata, config=new_config, key_added=config.latent_key)
+
+
+@dataclass
+class ScanVIConfig(ModelConfig):
+    name: str = "scanvi"
+    malignant_only: bool = False
+
+
+def run_scanvi(adata: AnnData, config: ScanVIConfig) -> AnnData:
+    raise NotImplementedError("This method requires several celltypes to run.")
+
+
+@dataclass
+class TrVAEpConfig(ModelConfig):
+    name: str = "trvaep"
+    n_top_genes: int = 3000
+    n_latent: int = 10
+    alpha: float = 1e-4
+    layer1: int = 64
+    layer2: int = 32
+    seed: int = 42  # Random seed
+    # Training params
+    epochs: int = 300
+    batch_size: int = 1024
+    early_patience: int = 50
+    learning_rate: float = 1e-3
+
+
+def _trvaep_normalize(adata: AnnData, n_top_genes: int) -> AnnData:
+    sc.pp.normalize_per_cell(adata)
+    sc.pp.log1p(adata)
+    sc.pp.highly_variable_genes(adata, n_top_genes=n_top_genes)
+    adata = adata[:, adata.var['highly_variable']]
+    return adata
+
+
+def run_trvaep(adata: AnnData, config: TrVAEpConfig) -> AnnData:
+    """trVAE (PyTorch version) wrapper function. It's a slightly modified scIB code."""
+    import trvaep
+    from scipy.sparse import issparse
+
+    n_batches = adata.obs[config.batch_key].nunique()
+
+    adata = _trvaep_normalize(adata, n_top_genes=config.n_top_genes)
+
+    # Densify the data matrix
+    if issparse(adata.X):
+        adata.X = adata.X.A
+
+    model = trvaep.CVAE(
+        adata.n_vars,
+        num_classes=n_batches,
+        encoder_layer_sizes=[config.layer1, config.layer2],  # Originally [64, 32]
+        decoder_layer_sizes=[config.layer2, config.layer1],  # Originally [32, 64]
+        latent_dim=config.n_latent,
+        alpha=config.alpha,
+        use_mmd=True,
+        beta=1,
+        output_activation="ReLU",
+    )
+
+    # Note: set seed for reproducibility of results
+    trainer = trvaep.Trainer(
+        model,
+        adata,
+        condition_key=config.batch_key,
+        seed=config.seed,
+        learning_rate=config.learning_rate
+    )
+
+    trainer.train_trvae(
+        n_epochs=config.epochs,
+        batch_size=config.batch_size,
+        early_patience=config.early_patience
+    )
+
+    # Get the dominant batch covariate
+    main_batch = adata.obs[config.batch_key].value_counts().idxmax()
+
+    # Get latent representation
+    latent_y = model.get_y(
+        adata.X,
+        c=model.label_encoder.transform(np.tile(np.array([main_batch]), len(adata))),
+    )
+    adata.obsm[config.latent_key] = latent_y
+
+    return adata
+
+
+class ScGENConfig(ModelConfig):
+    name: str = "scgen"
+    malignant_only: bool = False  # Probably -- hard to be 100% sure
+
+
+def run_scgen(adata: AnnData, config: ScGENConfig) -> AnnData:
+    raise NotImplementedError("scGEN model in scIB doesn't add low-dimensional representations, "
+                              "so that the implementation is tricky. Moreover, it requires other cell types.")
 
 
 @dataclass
