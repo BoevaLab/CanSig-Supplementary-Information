@@ -1,6 +1,5 @@
 """How CNA changes affect gene expression."""
-from hashlib import new
-from operator import ne
+
 from typing import Tuple, List
 import numpy as np
 import anndata as ad
