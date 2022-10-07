@@ -18,7 +18,6 @@ def get_zinb_gex(
     mean_array: np.ndarray,
     dispersion_array: np.ndarray,
     log_dropout_array: np.ndarray,
-    libsize_array: np.ndarray,
 ) -> np.ndarray:
     """Returns a sampled counts matrix using a ZINB corrected by lib size
 
@@ -276,12 +275,12 @@ def simulate_gex_malignant(
             for i in range(len(mapping_patients[patient].subclones))
         }
 
-        gaussian_gains, gaussian_losses = gex.return_gaussian_noise(
-            adata=adata, n_cells=len(cell_programs)
-        )
+        # gaussian_gains, gaussian_losses = gex.return_gaussian_noise(
+        #     adata=adata, n_cells=len(cell_programs)
+        # )
 
         print("Getting cell specific parameters")
-        mean_array, dispersion_array, log_dropout_array, libsize_array = [], [], [], []
+        mean_array, dispersion_array, log_dropout_array = [], [], []
 
         for i, program in enumerate(cell_programs):
             # here we do not draw without replacement because the number of cells we generate might
@@ -290,22 +289,23 @@ def simulate_gex_malignant(
             subclone_profile = patient_subclone_profiles[cell_subclones[i]].ravel()
 
             mean_gex = zinb_params[program]["mean"][cell_index]
+            disp_gex = zinb_params[program]["dispersions"][cell_index]
+            log_dropout_gex = zinb_params[program]["dropout"][cell_index]
 
-            # this will modify the expression using the subclone profile of the cell
             mean_gex = gex.change_expression(
                 mean_gex,
                 changes=subclone_profile,
-                gain_change=gain_expr + gaussian_gains[i],
-                loss_change=loss_expr + gaussian_losses[i],
+                gain_change=gain_expr,
+                loss_change=loss_expr,
             )
             # we clip the values so that 0 entries become 0.0001. This is because we
             # sample from a gamma distribution at the beginning
             # the % of 0 in the data is small enough that the approximation should be ok
             mean_gex = np.clip(mean_gex, a_min=0.0001, a_max=None)
+
             mean_array.append(mean_gex)
-            dispersion_array.append(zinb_params[program]["dispersions"][cell_index])
-            log_dropout_array.append(zinb_params[program]["dropout"][cell_index])
-            libsize_array.append(zinb_params[program]["libsize"][cell_index])
+            dispersion_array.append(disp_gex)
+            log_dropout_array.append(log_dropout_gex)
 
         print("Starting ZINB sampling")
 
@@ -313,7 +313,6 @@ def simulate_gex_malignant(
             mean_array=np.array(mean_array),
             dispersion_array=np.array(dispersion_array),
             log_dropout_array=np.array(log_dropout_array),
-            libsize_array=np.array(libsize_array),
         )
         all_malignant_gex[patient] = batch_gex
 
@@ -357,7 +356,7 @@ def simulate_gex_healthy(
         )
 
         print("Getting cell specific parameters")
-        mean_array, dispersion_array, log_dropout_array, libsize_array = [], [], [], []
+        mean_array, dispersion_array, log_dropout_array = [], [], []
 
         for program in cell_programs:
             # here we do not draw without replacement because the number of cells we generate might
@@ -367,14 +366,12 @@ def simulate_gex_healthy(
             mean_array.append(zinb_params[program]["mean"][cell_index])
             dispersion_array.append(zinb_params[program]["dispersions"][cell_index])
             log_dropout_array.append(zinb_params[program]["dropout"][cell_index])
-            libsize_array.append(zinb_params[program]["libsize"][cell_index])
 
         print("Starting ZINB sampling")
         batch_gex = get_zinb_gex(
             mean_array=np.array(mean_array),
             dispersion_array=np.array(dispersion_array),
             log_dropout_array=np.array(log_dropout_array),
-            libsize_array=np.array(libsize_array),
         )
         all_healthy_gex[patient] = batch_gex
 

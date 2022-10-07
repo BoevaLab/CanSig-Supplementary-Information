@@ -1,4 +1,6 @@
 """How CNA changes affect gene expression."""
+from hashlib import new
+from operator import ne
 from typing import Tuple, List
 import numpy as np
 import anndata as ad
@@ -213,34 +215,6 @@ def _generate_masks(changes: GeneVector) -> Tuple[GeneVector, GeneVector]:
     gain_mask = changes > 0
     loss_mask = changes < 0
     return gain_mask, loss_mask
-
-
-def return_gaussian_noise(
-    adata: ad.AnnData,
-    n_cells: int,
-    celltypes: List[str] = ["TCD4", "TCD8", "Tgd", "TZBTB16"],
-) -> Tuple[np.ndarray, np.ndarray]:
-    Tadata = adata[adata.obs.celltype.isin(celltypes)].copy()
-    sc.pp.normalize_total(Tadata, target_sum=10000)
-    sc.pp.log1p(Tadata)
-
-    sc.pp.highly_variable_genes(Tadata)
-
-    means = Tadata.var.means.ravel()
-
-    gaussian_gains = np.array(
-        [
-            np.random.normal(0.25 * means[i], 0.1 * means[i], size=(n_cells,))
-            for i in range(len(means))
-        ]
-    )
-    gaussian_losses = np.array(
-        [
-            np.random.normal(-0.25 * means[i], 0.1 * means[i], size=(n_cells,))
-            for i in range(len(means))
-        ]
-    )
-    return gaussian_gains.T, gaussian_losses.T
 
 
 def change_expression(

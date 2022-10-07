@@ -157,7 +157,6 @@ def get_param_patient(
         params[mapping_params[ct]] = model.get_likelihood_parameters(
             n_samples=1, indices=ind
         )
-        params[mapping_params[ct]]["libsize"] = adata.obs.iloc[ind][["n_counts"]].values
     return params
 
 
