@@ -1,0 +1,94 @@
+G1/S,G2/M,Melanoma specific
+ MCM5,  HMGB2,    TYMS
+    PCNA,    CDK1,    TK1
+    TYMS,    NUSAP1,    UBE2T
+    FEN1,    UBE2C,    CKS1B
+    MCM2,    BIRC5,    MCM5
+    MCM4,    TPX2,    UBE2C
+    RRM1,    TOP2A,    PCNA
+    UNG,    NDC80,    MAD2L1
+    GINS2,    CKS2,    ZWINT
+    MCM6,    NUF2,    MCM4
+    CDCA7,    CKS1B,    GMNN
+    DTL,    MKI67,    MCM7
+    PRIM1,    TMPO,    NUSAP1
+    UHRF1,    CENPF,    FEN1
+    MLF1IP,    TACC3,    CDK1
+    HELLS,    FAM64A,    BIRC5
+    RFC2,    SMC4,    KIAA0101
+    RPA2,    CCNB2,    PTTG1
+    NASP,    CKAP2L,    CENPM
+    RAD51AP1,    CKAP2,    KPNA2
+    GMNN,    AURKB,    CDC20
+    WDR76,    BUB1,    GINS2
+    SLBP,    KIF11,    ASF1B
+    CCNE2,    ANP32E,    RRM2
+    UBR7,    TUBB4B,    MLF1IP
+    POLD3,    GTSE1,    KIF22
+    MSH2,    KIF20B,    CDC45
+    ATAD2,    HJURP,    CDC6
+    RAD51,    HJURP,    FANCI
+    RRM2,    CDCA3,    HMGB2
+    CDC45,    HN1,    TUBA1B
+    CDC6,    CDC20,    RRM1
+    EXO1,    TTK,    CDKN3
+    TIPIN,    CDC25C,    WDR34
+    DSCC1,    KIF2C,    DTL
+    BLM,    RANGAP1,    CCNB1
+    CASP8AP2,    NCAPD2,    AURKB
+    USP1,    DLGAP5,    MCM2
+    CLSPN,    CDCA2,    CKS2
+    POLA1,    CDCA8,    PBK
+    CHAF1B,    ECT2,    TPX2
+    BRIP1,    KIF23,    RPL39L
+    E2F8,    HMMR,    SNRNP25
+,    AURKA,    TUBG1
+,    PSRC1,    RNASEH2A
+,    ANLN,    TOP2A
+,    LBR,    DTYMK
+,    CKAP5,    RFC3
+,    CENPE,    CENPF
+,    CTCF,    NUF2
+,    NEK2,    BUB1
+,    G2E3,    H2AFZ
+,    GAS2L3,    NUDT1
+,    CBX5,    SMC4
+,    CENPA,    ANLN
+,,    RFC4
+,,    RACGAP1
+,,    KIFC1
+,,    TUBB6
+,,    ORC6
+,,    CENPW
+,,    CCNA2
+,,    EZH2
+,,    NASP
+,,    DEK
+,,    TMPO
+,,    DSN1
+,,    DHFR
+,,    KIF2C
+,,    TCF19
+,,    HAT1
+,,    VRK1
+,,    SDF2L1
+,,    PHF19
+,,    SHCBP1
+,,    SAE1
+,,    CDCA5
+,,    OIP5
+,,    RANBP1
+,,    LMNB1
+,,    TROAP
+,,    RFC5
+,,    DNMT1
+,,    MSH2
+,,    MND1
+,,    TIMELESS
+,,    HMGB1
+,,    ZWILCH
+,,    ASPM
+,,    ANP32E
+,,    POLA2
+,,    FABP5
+,,    TMEM194A
