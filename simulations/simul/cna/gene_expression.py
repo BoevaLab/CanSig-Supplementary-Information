@@ -1,7 +1,9 @@
 """How CNA changes affect gene expression."""
-from typing import Tuple
+
+from typing import Tuple, List
 import numpy as np
 import anndata as ad
+import scanpy as sc
 from scipy.stats import truncnorm
 
 from .types import GeneVector

@@ -5,13 +5,23 @@ import pathlib
 import scvi
 
 ######### INSERT PATH TO ORIGINAL DATA ############
-DATAPATH = pathlib.Path("/insert/path/here")
+DATAPATH = pathlib.Path("/insert/path/to/data")
 
 adata = sc.read_h5ad(DATAPATH / "non_malignant.h5ad")
 
 adata = adata[
-    adata.obs.celltype.isin(["TCD4", "TCD8", "Tgd", "Macro", "Plasma"])
+    adata.obs.celltype.isin(["TCD4", "TCD8", "Tgd", "TZBTB16", "Macro", "Plasma"])
 ].copy()
+
+adata.layers["counts"] = adata.X.copy()
+sc.pp.normalize_total(adata, target_sum=10000)
+sc.pp.log1p(adata)
+sc.pp.highly_variable_genes(adata)
+adata.X = adata.layers["counts"]
+del adata.uns["log1p"]
+
+heg = adata.var.sort_values(by="means", ascending=False).head(5000).index
+adata = adata[:, heg].copy()
 
 scvi.model.SCVI.setup_anndata(adata, batch_key="sample_id")
 
