@@ -12,7 +12,6 @@ def save_latent(adata: AnnData, latent_key: str, dataset_name: str) -> None:
         latent = pd.DataFrame(adata.obsm[latent_key], index=adata.obs_names)
         latent.to_csv(f"{dataset_name}_latent.csv")
 
-
 def plot_integration(
         adata: AnnData, dataset_name: str, batch_key: str, group_key: str
 ) -> None:

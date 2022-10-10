@@ -46,7 +46,7 @@ class Config:
             },
             "launcher": {
                 "mem_gb": 32,
-                "timeout_min": 120,
+                "timeout_min": 360,
                 "partition": "${get_partition:${model.gpu}}",
                 "gres": "${get_gres:${model.gpu}}",
             },

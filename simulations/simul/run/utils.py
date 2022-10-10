@@ -14,6 +14,8 @@ from matplotlib.colors import TwoSlopeNorm
 
 from ..patients.dataset import Dataset
 
+
+import scanpy
 ####### Plotting ###########
 def plot_subclone_profile(dataset: Dataset, filename: Optional[str] = None) -> None:
     """Function to plot the true CNV profile as a heatmap
