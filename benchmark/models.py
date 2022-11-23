@@ -11,10 +11,10 @@ import scanpy as sc
 import scanpy.external as sce
 import scvi
 from anndata import AnnData
-from cansig.integration.model import CanSig
+#from cansig.integration.model import CanSig
 from omegaconf import MISSING
 
-from utils import split_batches
+from benchmark.utils import split_batches
 
 
 @dataclass
@@ -38,8 +38,6 @@ def run_model(adata: AnnData, cfg) -> Tuple[AnnData, float]:
         adata = run_scanorama(adata, config=cfg)
     elif cfg.name == "harmony":
         adata = run_harmony(adata, config=cfg)
-    elif cfg.name == "cansig":
-        adata = run_cansig(adata, config=cfg)
     elif cfg.name == "nmm":
         adata = run_mnn(adata, config=cfg)
     elif cfg.name == "combat":
@@ -219,6 +217,8 @@ def run_bbknn(adata: AnnData, config: BBKNNConfig) -> AnnData:
 class SCVIConfig(ModelConfig):
     name: str = "scvi"
     gpu: bool = True
+    prior: str = "normal"
+    n_components: Optional[int] = None
     covariates: Optional[List] = field(
         default_factory=lambda: ["S_score", "G2M_score"]
     )
@@ -236,11 +236,15 @@ def run_scvi(adata: AnnData, config: SCVIConfig) -> AnnData:
 
     scvi.model.SCVI.setup_anndata(bdata, layer="counts", batch_key=config.batch_key,
                                   continuous_covariate_keys=config.covariates)
+
+    prior_kwargs = None if config.n_components is None else {"n_components": config.n_components}
     model = scvi.model.SCVI(
         bdata,
         n_latent=config.n_latent,
         n_hidden=config.n_hidden,
         n_layers=config.n_layers,
+        prior_distribution=config.prior,
+        prior_kwargs=prior_kwargs
     )
     model.train(
         max_epochs=config.max_epochs,
@@ -285,7 +289,7 @@ class HarmonyConfig(ModelConfig):
     name: str = "harmony"
     max_iter_harmony: int = 100
     max_iter_kmeans: int = 100
-    theta: float = 2.0
+    theta: float = 1.0
     lamb: float = 1.0
     epsilon_cluster: float = 1e-5
     epsilon_harmony: float = 1e-4
@@ -486,7 +490,7 @@ def run_desc(adata: AnnData, config: DescConfig) -> AnnData:
     return adata_out
 
 
-def save_model_history(model: CanSig, name: str = ""):
+def save_model_history(model, name: str = ""):
     modules = {
         "combined": model.module,
         "batch_effect": model.module_batch_effect,
@@ -498,7 +502,7 @@ def save_model_history(model: CanSig, name: str = ""):
         df.to_csv(f"{key}_{name}.csv")
 
 
-def save_latent_spaces(model: CanSig, adata: AnnData, name: str = ""):
+def save_latent_spaces(model, adata: AnnData, name: str = ""):
     latent = model.get_batch_effect_latent_representation()
     idx = model.get_index(malignant_cells=False)
     df = pd.DataFrame(latent, index=adata.obs_names[idx])

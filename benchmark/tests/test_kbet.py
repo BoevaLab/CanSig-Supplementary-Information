@@ -6,7 +6,7 @@ from benchmark.metrics import kbet
 from test_metrics import get_adata
 
 
-
+@pytest.mark.parametrize("proportion", [None])
 def test_kbet(proportion):
     from scib.metrics import kBET
 
