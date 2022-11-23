@@ -14,7 +14,7 @@ from anndata import AnnData
 #from cansig.integration.model import CanSig
 from omegaconf import MISSING
 
-from benchmark.utils import split_batches
+from utils import split_batches
 
 
 @dataclass
