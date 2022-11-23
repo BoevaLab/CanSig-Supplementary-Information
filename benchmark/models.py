@@ -220,7 +220,7 @@ class SCVIConfig(ModelConfig):
     prior: str = "normal"
     n_components: Optional[int] = None
     covariates: Optional[List] = field(
-        default_factory=lambda: ["S_score", "G2M_score"]
+        default_factory=lambda: []
     )
     n_latent: int = 4
     n_hidden: int = 128
