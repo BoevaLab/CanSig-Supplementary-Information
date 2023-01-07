@@ -219,13 +219,12 @@ def run_bbknn(adata: AnnData, config: BBKNNConfig) -> AnnData:
 class SCVIConfig(ModelConfig):
     name: str = "scvi"
     gpu: bool = True
-    covariates: Optional[List] = field(
-        default_factory=lambda: ["S_score", "G2M_score"]
-    )
     n_latent: int = 4
     n_hidden: int = 128
     n_layers: int = 1
     max_epochs: int = 400
+    cell_cycle: bool = False
+    log_counts: bool = False
 
 
 def run_scvi(adata: AnnData, config: SCVIConfig) -> AnnData:
@@ -234,8 +233,15 @@ def run_scvi(adata: AnnData, config: SCVIConfig) -> AnnData:
     sc.pp.highly_variable_genes(adata, n_top_genes=config.n_top_genes)
     bdata = adata[:, adata.var["highly_variable"]].copy()
 
+    covariates = []
+    if config.cell_cycle:
+        covariates += ["S_score", "G2M_score"]
+
+    if config.log_counts:
+        covariates += ["log_counts"]
+
     scvi.model.SCVI.setup_anndata(bdata, layer="counts", batch_key=config.batch_key,
-                                  continuous_covariate_keys=config.covariates)
+                                  continuous_covariate_keys=covariates)
     model = scvi.model.SCVI(
         bdata,
         n_latent=config.n_latent,
@@ -326,9 +332,8 @@ class CanSigConfig(ModelConfig):
     batch_effect_max_epochs: int = 400
     beta: float = 1.0
     batch_effect_beta: float = 1.0
-    covariates: Optional[List] = field(
-        default_factory=lambda: ["S_score", "G2M_score"]
-    )
+    cell_cycle: bool = False
+    log_counts: bool = False
     annealing: str = "linear"
     malignant_key: str = "malignant_key"
     malignant_cat: str = "malignant"
@@ -344,13 +349,19 @@ def run_cansig(adata: AnnData, config: CanSigConfig) -> AnnData:
         malignant_key=config.malignant_key,
         malignant_cat=config.malignant_cat,
     )
+    covariates = []
+    if config.cell_cycle:
+        covariates += ["S_score", "G2M_score"]
+
+    if config.log_counts:
+        covariates += ["log_counts"]
     CanSig.setup_anndata(
         bdata,
         celltype_key=config.celltype_key,
         malignant_key=config.malignant_key,
         malignant_cat=config.malignant_cat,
         non_malignant_cat=config.non_malignant_cat,
-        continuous_covariate_keys=config.covariates,
+        continuous_covariate_keys=covariates,
         layer="counts",
     )
     model = CanSig(
@@ -424,7 +435,7 @@ class CombatConfig(ModelConfig):
 def run_combat(adata: AnnData, config: CombatConfig) -> AnnData:
     covariates = []
     if config.cell_cycle:
-        covariates += ["G2M_score", "S_score"]
+        covariates += ["S_score", "G2M_score"]
 
     if config.log_counts:
         covariates += ["log_counts"]
