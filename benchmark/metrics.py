@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 
@@ -23,6 +24,8 @@ from models import ModelConfig
 from utils import diffusion_nn, diffusion_conn
 
 
+_LOGGER = logging.getLogger(__name__)
+
 @dataclass
 class MetricsConfig:
     n_neighbors: int = 50
@@ -34,7 +37,7 @@ class MetricsConfig:
 
 def run_metrics(adata: AnnData, config: ModelConfig, metric_config: MetricsConfig):
     metrics = {}
-
+    _LOGGER.info("Computing neighbors.")
     compute_neighbors(
         adata,
         latent_key=config.latent_key,
@@ -42,16 +45,20 @@ def run_metrics(adata: AnnData, config: ModelConfig, metric_config: MetricsConfi
     )
 
     # Biological conservation metrics
+    _LOGGER.info("Computing ASW.")
     metrics.update(compute_asw(adata, metric_config.group_key, config.latent_key))
+    _LOGGER.info("Computing dv-score.")
     metrics.update(
         compute_davies_bouldin(adata, metric_config.group_key, config.latent_key)
     )
     metrics.update(
         compute_calinski_harabasz(adata, metric_config.group_key, config.latent_key)
     )
+    _LOGGER.info("Computing ARI and NMI.")
     metrics.update(compute_ari_nmi(adata, metric_config))
 
     # Batch effect metrics
+    _LOGGER.info("Computing KBET.")
     metrics.update(
         kbet(
             adata,
