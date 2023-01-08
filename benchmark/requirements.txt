@@ -1,5 +1,6 @@
 hydra-core
 bbknn
+harmonypy
 anndata
 infercnvpy
 matplotlib

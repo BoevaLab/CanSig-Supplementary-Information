@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Any
@@ -46,7 +47,7 @@ class Config:
             },
             "launcher": {
                 "mem_gb": 32,
-                "timeout_min": 360,
+                "timeout_min": 720,
                 "partition": "${get_partition:${model.gpu}}",
                 "gres": "${get_gres:${model.gpu}}",
             },
@@ -74,13 +75,15 @@ cs.store(group="model", name="scanvi", node=ScanVIConfig)
 cs.store(group="model", name="trvaep", node=TrVAEpConfig)
 cs.store(group="model", name="scgen", node=ScGENConfig)
 
+_LOGGER = logging.getLogger(__name__)
+
 
 @hydra.main(config_name="config", config_path=None)
 def main(cfg: Config):
     dfs = []
     dataset_path = Path(cfg.data_path)
     for dataset in sorted(list(dataset_path.iterdir())):
-        print(f"Processing {dataset.stem}", flush=True)
+        _LOGGER.info(f"Processing {dataset.stem}", flush=True)
         results = {}
         adata = read_anndata(
             dataset,
@@ -88,19 +91,23 @@ def main(cfg: Config):
             malignant_key=cfg.malignant_key,
             malignant_cat=cfg.malignant_cat,
         )
+        _LOGGER.info(f"Running integration model {cfg.model.name}.")
         adata, run_time = run_model(adata, cfg.model)
 
         results["run_time"] = run_time
+        _LOGGER.info("Start running metrics.")
         results.update(
             run_metrics(adata, config=cfg.model, metric_config=cfg.metric_config)
         )
         dfs.append(pd.DataFrame(results, index=[dataset.stem]))
+        _LOGGER.info("Plotting integration results.")
         plot_integration(
             adata,
             dataset_name=dataset.stem,
             batch_key=cfg.model.batch_key,
             group_key=cfg.metric_config.group_key,
         )
+        _LOGGER.info("Saving latent spaces.")
         save_latent(adata, latent_key=cfg.model.latent_key, dataset_name=dataset.stem)
 
     pd.concat(dfs).to_csv("results.csv")
