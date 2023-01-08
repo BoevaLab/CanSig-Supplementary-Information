@@ -240,6 +240,8 @@ def run_scvi(adata: AnnData, config: SCVIConfig) -> AnnData:
     if config.log_counts:
         covariates += ["log_counts"]
 
+    covariates = covariates or None
+
     scvi.model.SCVI.setup_anndata(bdata, layer="counts", batch_key=config.batch_key,
                                   continuous_covariate_keys=covariates)
     model = scvi.model.SCVI(
@@ -355,6 +357,9 @@ def run_cansig(adata: AnnData, config: CanSigConfig) -> AnnData:
 
     if config.log_counts:
         covariates += ["log_counts"]
+
+    covariates = covariates or None
+
     CanSig.setup_anndata(
         bdata,
         celltype_key=config.celltype_key,
