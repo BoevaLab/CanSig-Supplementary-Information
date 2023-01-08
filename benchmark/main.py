@@ -48,6 +48,7 @@ class Config:
             "launcher": {
                 "mem_gb": 32,
                 "timeout_min": 720,
+                "cpus-per-task": 8,
                 "partition": "${get_partition:${model.gpu}}",
                 "gres": "${get_gres:${model.gpu}}",
             },
