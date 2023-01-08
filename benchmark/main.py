@@ -83,7 +83,7 @@ def main(cfg: Config):
     dfs = []
     dataset_path = Path(cfg.data_path)
     for dataset in sorted(list(dataset_path.iterdir())):
-        _LOGGER.info(f"Processing {dataset.stem}", flush=True)
+        _LOGGER.info(f"Processing {dataset.stem}")
         results = {}
         adata = read_anndata(
             dataset,
