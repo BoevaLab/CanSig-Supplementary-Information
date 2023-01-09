@@ -48,6 +48,7 @@ class Config:
             "launcher": {
                 "mem_gb": 32,
                 "timeout_min": 720,
+                "cpus_per_task": 8,
                 "partition": "${get_partition:${model.gpu}}",
                 "gres": "${get_gres:${model.gpu}}",
             },
@@ -83,7 +84,7 @@ def main(cfg: Config):
     dfs = []
     dataset_path = Path(cfg.data_path)
     for dataset in sorted(list(dataset_path.iterdir())):
-        _LOGGER.info(f"Processing {dataset.stem}", flush=True)
+        _LOGGER.info(f"Processing {dataset.stem}")
         results = {}
         adata = read_anndata(
             dataset,

@@ -198,18 +198,20 @@ def run_scgen(adata: AnnData, config: ScGENConfig) -> AnnData:
 class BBKNNConfig(ModelConfig):
     name: str = "bbknn"
     neighbors_within_batch: int = 3
-
+    scale: bool = False
 
 def run_bbknn(adata: AnnData, config: BBKNNConfig) -> AnnData:
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
     sc.pp.highly_variable_genes(adata, n_top_genes=config.n_top_genes, subset=True)
-    sc.pp.scale(adata)
+    if config.scale:
+        sc.pp.scale(adata)
     sc.tl.pca(adata)
     bbknn.bbknn(
         adata,
         batch_key=config.batch_key,
         neighbors_within_batch=config.neighbors_within_batch,
+        use_annoy=False
     )
 
     return adata
@@ -240,6 +242,8 @@ def run_scvi(adata: AnnData, config: SCVIConfig) -> AnnData:
     if config.log_counts:
         covariates += ["log_counts"]
 
+    covariates = covariates or None
+
     scvi.model.SCVI.setup_anndata(bdata, layer="counts", batch_key=config.batch_key,
                                   continuous_covariate_keys=covariates)
     model = scvi.model.SCVI(
@@ -263,7 +267,7 @@ class ScanoramaConfig(ModelConfig):
     name: str = "scanorama"
     knn: int = 20
     sigma: float = 15.0
-    approx: bool = True
+    approx: bool = False
     alpha: float = 0.1
 
 
@@ -291,8 +295,9 @@ class HarmonyConfig(ModelConfig):
     name: str = "harmony"
     max_iter_harmony: int = 100
     max_iter_kmeans: int = 100
-    theta: float = 2.0
+    theta: float = 1.0
     lamb: float = 1.0
+    sigma: float = 0.1
     epsilon_cluster: float = 1e-5
     epsilon_harmony: float = 1e-4
     random_state: int = 0
@@ -307,6 +312,7 @@ def run_harmony(adata: AnnData, config: HarmonyConfig) -> AnnData:
         theta=config.theta,
         lamb=config.lamb,
         adjusted_basis=config.latent_key,
+        sigma=config.sigma,
         max_iter_harmony=config.max_iter_harmony,
         max_iter_kmeans=config.max_iter_kmeans,
         epsilon_cluster=config.epsilon_cluster,
@@ -355,6 +361,9 @@ def run_cansig(adata: AnnData, config: CanSigConfig) -> AnnData:
 
     if config.log_counts:
         covariates += ["log_counts"]
+
+    covariates = covariates or None
+
     CanSig.setup_anndata(
         bdata,
         celltype_key=config.celltype_key,

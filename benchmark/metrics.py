@@ -211,7 +211,9 @@ def compute_ari_nmi(
 ) -> Dict[str, Optional[float]]:
     metrics = {}
     for k in metric_config.clustering_range:
+
         for random_seed in range(metric_config.n_random_seeds):
+            _LOGGER.info(f"Running {k} clusters and {random_seed} random seed.")
             try:
                 leiden_config = LeidenNClusterConfig(
                     random_state=random_seed, clusters=k
