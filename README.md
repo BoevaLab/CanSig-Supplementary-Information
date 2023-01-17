@@ -2,7 +2,7 @@
 
 This repository accompanies the [CanSig tool](https://github.com/boevaLab/cansig) and the preprint:
 
-Josephine Yates, Florian Barkmann, Paweł Czyż, Marc Glettig, Frederieke Lohmann, Richard von der Horst, Elia Saquand, Nicolas Volken, Agnieszka Kraft, Valentina Boeva
+Josephine Yates, Florian Barkmann, Pawel Czyz, Agnieszka Kraft, Marc Glettig, Frederieke Lohmann, Elia Saquand, Richard von der Horst, Nicolas Volken, Niko Beerenwinkel and Valentina Boeva
 bioRxiv 2022.04.14.488324; doi: [https://doi.org/10.1101/2022.04.14.488324](https://doi.org/10.1101/2022.04.14.488324)
 
 We store here our analyses, experiments, as well as the code to generate the figures, to increase reproducibility.
@@ -17,5 +17,5 @@ In `benchmark/` directory we test the batch integration algorithms on a simulate
 In `Dhaka-implementation/` directory we provide an unofficial PyTorch implementation of [Dhaka](https://doi.org/10.1093/bioinformatics/btz095) dimension reduction method.
 
 
-### Simulations
-In `simulations/` directory we provide a procedure to generate artificial cancer datasets, with copy number aberrations affecting gene expression.
+### Notebooks
+In `notebooks/` directory we provide the notebooks that were used to generate the plots and the information for the experiments.
