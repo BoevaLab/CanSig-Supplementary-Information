@@ -5,6 +5,8 @@ This repository accompanies the [CanSig tool](https://github.com/boevaLab/cansig
 Josephine Yates, Florian Barkmann, Pawel Czyz, Agnieszka Kraft, Marc Glettig, Frederieke Lohmann, Elia Saquand, Richard von der Horst, Nicolas Volken, Niko Beerenwinkel and Valentina Boeva
 bioRxiv 2022.04.14.488324; doi: [https://doi.org/10.1101/2022.04.14.488324](https://doi.org/10.1101/2022.04.14.488324)
 
+![cansig_tool_figure](https://github.com/BoevaLab/CanSig-Supplementary-Information/blob/main/Main_Fig1.png?raw=true)
+
 We store here our analyses, experiments, as well as the code to generate the figures, to increase reproducibility.
 
 ## Contents
