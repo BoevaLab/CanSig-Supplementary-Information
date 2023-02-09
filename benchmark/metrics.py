@@ -3,14 +3,9 @@ from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 
 import numpy as np
-import pandas as pd
-import scanpy as sc
-import scipy
 from anndata import AnnData
-from scETM.eval_utils import (
-    calculate_kbet,
-    _get_knn_indices,
-)
+import scib_metrics as sm
+from scib_metrics.benchmark import Benchmarker
 from sklearn.metrics import (
     adjusted_rand_score,
     normalized_mutual_info_score,
@@ -21,7 +16,6 @@ from sklearn.metrics import (
 
 from _cluster import LeidenNClusterConfig, LeidenNCluster
 from models import ModelConfig
-from utils import diffusion_nn, diffusion_conn
 
 
 _LOGGER = logging.getLogger(__name__)

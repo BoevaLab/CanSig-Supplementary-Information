@@ -10,8 +10,16 @@ pandas
 pytest
 scanpy
 scvi-tools
-scETM
+scib-metrics
 scanorama
 mnnpy
 scgen
 desc
+pyliger
+#pyliger dependencies
+numexpr
+seaborn
+plotnine
+mygene
+goatools
+adjustText
