@@ -42,8 +42,8 @@ class Config:
 class Slurm(SlurmQueueConf):
     mem_gb: int = 16
     timeout_min: int = 720
-    partition: str = "${get_partition:${model.gpu}}"
-    gres: Optional[str] = "${get_gres:${model.gpu}}"
+    partition: str = field(default_factory=lambda: "${get_partition:${model.gpu}}")
+    gres: Optional[str] = field(default_factory=lambda: "${get_gres:${model.gpu}}")
 
 
 OmegaConf.register_new_resolver("run_dir", get_directory_name)
