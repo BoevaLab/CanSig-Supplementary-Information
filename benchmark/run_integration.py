@@ -39,11 +39,19 @@ class Config:
 
 
 @dataclass
-class Slurm(SlurmQueueConf):
+class SlurmCPU(SlurmQueueConf):
     mem_gb: int = 16
     timeout_min: int = 720
-    partition: str = field(default_factory=lambda: "${get_partition:${model.gpu}}")
-    gres: Optional[str] = field(default_factory=lambda: "${get_gres:${model.gpu}}")
+    partition: str = "compute"
+    gres: Optional[str] = None
+
+
+class SlurmGPU(SlurmQueueConf):
+    mem_gb: int = 16
+    timeout_min: int = 720
+    partition: str = "gpu"
+    gres: Optional[str] = "gpu:rtx2080ti:1"
+
 
 
 OmegaConf.register_new_resolver("run_dir", get_directory_name)
@@ -52,7 +60,8 @@ OmegaConf.register_new_resolver("get_partition", get_partition)
 
 cs = ConfigStore.instance()
 cs.store(name="config", node=Config)
-cs.store(group="hydra/launcher", name="slurm", node=Slurm, provider="submitit_launcher")
+cs.store(group="hydra/launcher", name="slurm_cpu", node=SlurmCPU, provider="submitit_launcher")
+cs.store(group="hydra/launcher", name="slurm_gpu", node=SlurmGPU, provider="submitit_launcher")
 cs.store(group="model", name="bbknn", node=BBKNNConfig)
 cs.store(group="model", name="scvi", node=SCVIConfig)
 cs.store(group="model", name="scanorama", node=ScanoramaConfig)

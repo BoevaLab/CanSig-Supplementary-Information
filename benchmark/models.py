@@ -7,7 +7,6 @@ from typing import Tuple, Union
 
 import bbknn
 import numpy as np
-import pyliger
 import scanpy as sc
 import scanpy.external as sce
 import scvi
