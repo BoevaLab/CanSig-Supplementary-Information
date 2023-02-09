@@ -1,3 +1,4 @@
+import logging
 import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -13,9 +14,12 @@ import scvi
 from anndata import AnnData
 from cansig.integration.model import CanSig
 from omegaconf import MISSING
+import pyliger
+
 
 from utils import split_batches
 
+_LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class ModelConfig:
@@ -30,6 +34,7 @@ class ModelConfig:
 
 def run_model(adata: AnnData, cfg) -> Tuple[AnnData, float]:
     start = timer()
+    _LOGGER.info(f"Start running {cfg.name}.")
     if cfg.name == "bbknn":
         adata = run_bbknn(adata, config=cfg)
     elif cfg.name == "scvi":
@@ -54,6 +59,8 @@ def run_model(adata: AnnData, cfg) -> Tuple[AnnData, float]:
         adata = run_trvaep(adata, config=cfg)
     elif cfg.name == "scgen":
         adata = run_scgen(adata, config=cfg)
+    elif cfg.name == "liger":
+        adata = run_liger(adata, config=cfg)
     else:
         raise NotImplementedError(f"{cfg.name} is not implemented.")
     run_time = timer() - start
@@ -67,7 +74,7 @@ class DhakaConfig(ModelConfig):
 
     n_latent: int = 3
     # Data preprocessing
-    n_genes: int = 5000
+    n_top_genes: int = 5000
     total_expression: float = 1e6
     pseudocounts: int = 1
     # Training
@@ -84,7 +91,7 @@ def run_dhaka(adata: AnnData, config: DhakaConfig) -> AnnData:
 
     new_config = dh.DhakaConfig(
         n_latent=config.n_latent,
-        n_genes=config.n_genes,
+        n_genes=config.n_top_genes,
         total_expression=config.total_expression,
         pseudocounts=config.pseudocounts,
         epochs=config.epochs,
@@ -198,6 +205,7 @@ def run_scgen(adata: AnnData, config: ScGENConfig) -> AnnData:
 class BBKNNConfig(ModelConfig):
     name: str = "bbknn"
     neighbors_within_batch: int = 3
+    trim: int = 15
 
 
 def run_bbknn(adata: AnnData, config: BBKNNConfig) -> AnnData:
@@ -210,6 +218,7 @@ def run_bbknn(adata: AnnData, config: BBKNNConfig) -> AnnData:
         adata,
         batch_key=config.batch_key,
         neighbors_within_batch=config.neighbors_within_batch,
+        trim=config.trim
     )
 
     return adata
@@ -222,7 +231,7 @@ class SCVIConfig(ModelConfig):
     covariates: Optional[List] = field(
         default_factory=lambda: ["S_score", "G2M_score"]
     )
-    n_latent: int = 4
+    n_latent: int = 10
     n_hidden: int = 128
     n_layers: int = 1
     max_epochs: int = 400
@@ -285,7 +294,7 @@ class HarmonyConfig(ModelConfig):
     name: str = "harmony"
     max_iter_harmony: int = 100
     max_iter_kmeans: int = 100
-    theta: float = 2.0
+    theta: float = 1.0
     lamb: float = 1.0
     epsilon_cluster: float = 1e-5
     epsilon_harmony: float = 1e-4
@@ -316,7 +325,7 @@ class CanSigConfig(ModelConfig):
     name: str = "cansig"
     gpu: bool = True
     malignant_only: bool = False
-    n_latent: int = 4
+    n_latent: int = 10
     n_layers: int = 1
     n_hidden: int = 128
     n_latent_batch_effect: int = 5
@@ -376,10 +385,6 @@ def run_cansig(adata: AnnData, config: CanSigConfig) -> AnnData:
         },
         batch_effect_plan_kwargs={"beta": config.batch_effect_beta},
     )
-
-    save_model_history(model)
-
-    save_latent_spaces(model, adata)
 
     idx = model.get_index(malignant_cells=True)
     adata = adata[idx, :].copy()
@@ -486,25 +491,37 @@ def run_desc(adata: AnnData, config: DescConfig) -> AnnData:
     return adata_out
 
 
-def save_model_history(model: CanSig, name: str = ""):
-    modules = {
-        "combined": model.module,
-        "batch_effect": model.module_batch_effect,
-        "cnv": model.module_cnv,
-    }
-
-    for key, module in modules.items():
-        df = pd.concat([df for df in module.history.values()], axis=1)
-        df.to_csv(f"{key}_{name}.csv")
+@dataclass
+class LigerConfig(ModelConfig):
+    name: str = "liger"
+    k: int = 30
+    value_lambda: float = 5.0
+    thresh: float = 1e-6
 
 
-def save_latent_spaces(model: CanSig, adata: AnnData, name: str = ""):
-    latent = model.get_batch_effect_latent_representation()
-    idx = model.get_index(malignant_cells=False)
-    df = pd.DataFrame(latent, index=adata.obs_names[idx])
-    df.to_csv(f"{name}_batch_effect_latent.csv")
+def run_liger(adata: AnnData, config: LigerConfig):
 
-    latent = model.get_cnv_latent_representation()
-    idx = model.get_index(malignant_cells=True)
-    df = pd.DataFrame(latent, index=adata.obs_names[idx])
-    df.to_csv(f"{name}_cnv_latent.csv")
+    bdata = adata.copy()
+    batch_cats = bdata.obs[config.batch_key].unique()
+    bdata.X = bdata.layers["counts"]
+    adata_list = [bdata[bdata.obs[config.batch_key] == b].copy() for b in batch_cats]
+    for i, ad in enumerate(adata_list):
+        ad.uns["sample_name"] = batch_cats[i]
+        # Hack to make sure each method uses the same genes
+        ad.uns["var_gene_idx"] = np.arange(bdata.n_vars)
+
+
+    liger_data = pyliger.create_liger(adata_list, remove_missing=False, make_sparse=False)
+    # Hack to make sure each method uses the same genes
+    liger_data.var_genes = bdata.var_names
+    pyliger.normalize(liger_data)
+    pyliger.scale_not_center(liger_data)
+    pyliger.optimize_ALS(liger_data, k=config.k, value_lambda=config.value_lambda, thresh=config.thresh)
+    pyliger.quantile_norm(liger_data)
+
+
+    adata.obsm[config.latent_key] = np.zeros((adata.shape[0], liger_data.adata_list[0].obsm["H_norm"].shape[1]))
+    for i, b in enumerate(batch_cats):
+        adata.obsm[config.latent_key][adata.obs[config.batch_key] == b] = liger_data.adata_list[i].obsm["H_norm"]
+
+    return adata

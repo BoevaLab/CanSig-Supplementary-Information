@@ -1,6 +1,7 @@
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 
 import hydra
 import pandas as pd
@@ -8,8 +9,7 @@ from cansig.filesys import get_directory_name
 from hydra.core.config_store import ConfigStore
 from omegaconf import OmegaConf
 
-from data import read_anndata
-from metrics import run_metrics, MetricsConfig
+from data import read_anndata, DataConfig
 from models import (
     ModelConfig,
     BBKNNConfig,
@@ -22,36 +22,28 @@ from models import (
     ScanVIConfig,
     TrVAEpConfig,
     ScGENConfig,
-    run_model, CombatConfig, DescConfig,
+    run_model, CombatConfig, DescConfig, LigerConfig,
 )
-from utils import save_latent, plot_integration, get_gres, get_partition
+from utils import (save_latent, get_gres, get_partition,
+                   hydra_run_sweep)
+from hydra_plugins.hydra_submitit_launcher.config import SlurmQueueConf
 
-DEFAULTS = {"hydra/launcher": "submitit_slurm"}
-
+_LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class Config:
     model: ModelConfig
-    metric_config: MetricsConfig = MetricsConfig()
-    malignant_key: str = "malignant_key"
-    malignant_cat: str = "malignant"
-    data_path: str = "/cluster/work/boeva/scRNAdata/benchmark/datasets"
+    data: DataConfig = DataConfig()
     results_path: str = "/cluster/work/boeva/scRNAdata/benchmark/results"
-    hydra: Dict[str, Any] = field(
-        default_factory=lambda: {
-            "run": {"dir": "${results_path}/${model.name}/${run_dir:}"},
-            "sweep": {
-                "dir": "${results_path}/${model.name}",
-                "subdir": "${run_dir:}",
-            },
-            "launcher": {
-                "mem_gb": 32,
-                "timeout_min": 360,
-                "partition": "${get_partition:${model.gpu}}",
-                "gres": "${get_gres:${model.gpu}}",
-            },
-        }
-    )
+    hydra: Dict[str, Any] = field(default_factory=hydra_run_sweep)
+
+
+@dataclass
+class Slurm(SlurmQueueConf):
+    mem_gb: int = 16
+    timeout_min: int = 720
+    partition: str = "${get_partition:${model.gpu}}"
+    gres: Optional[str] = "${get_gres:${model.gpu}}"
 
 
 OmegaConf.register_new_resolver("run_dir", get_directory_name)
@@ -59,8 +51,8 @@ OmegaConf.register_new_resolver("get_gres", get_gres)
 OmegaConf.register_new_resolver("get_partition", get_partition)
 
 cs = ConfigStore.instance()
-
 cs.store(name="config", node=Config)
+cs.store(group="hydra/launcher", name="slurm", node=Slurm, provider="submitit_launcher")
 cs.store(group="model", name="bbknn", node=BBKNNConfig)
 cs.store(group="model", name="scvi", node=SCVIConfig)
 cs.store(group="model", name="scanorama", node=ScanoramaConfig)
@@ -73,37 +65,27 @@ cs.store(group="model", name="dhaka", node=DhakaConfig)
 cs.store(group="model", name="scanvi", node=ScanVIConfig)
 cs.store(group="model", name="trvaep", node=TrVAEpConfig)
 cs.store(group="model", name="scgen", node=ScGENConfig)
+cs.store(group="model", name="liger", node=LigerConfig)
 
 
-@hydra.main(config_name="config", config_path=None)
+@hydra.main(config_name="config", config_path=None, version_base="1.1")
 def main(cfg: Config):
-    dfs = []
-    dataset_path = Path(cfg.data_path)
+    run_times = {}
+    dataset_path = Path(cfg.data.data_path)
     for dataset in sorted(list(dataset_path.iterdir())):
-        print(f"Processing {dataset.stem}", flush=True)
-        results = {}
+        _LOGGER.info(f"Processing {dataset.stem}")
         adata = read_anndata(
             dataset,
             cfg.model.malignant_only,
-            malignant_key=cfg.malignant_key,
-            malignant_cat=cfg.malignant_cat,
+            malignant_key=cfg.data.malignant_key,
+            malignant_cat=cfg.data.malignant_cat,
         )
         adata, run_time = run_model(adata, cfg.model)
 
-        results["run_time"] = run_time
-        results.update(
-            run_metrics(adata, config=cfg.model, metric_config=cfg.metric_config)
-        )
-        dfs.append(pd.DataFrame(results, index=[dataset.stem]))
-        plot_integration(
-            adata,
-            dataset_name=dataset.stem,
-            batch_key=cfg.model.batch_key,
-            group_key=cfg.metric_config.group_key,
-        )
+        run_times[dataset.stem] = run_time
         save_latent(adata, latent_key=cfg.model.latent_key, dataset_name=dataset.stem)
 
-    pd.concat(dfs).to_csv("results.csv")
+    pd.DataFrame.from_dict(run_times, orient='index', columns=["run_time"]).to_csv("run_times.csv")
 
 
 if __name__ == "__main__":
