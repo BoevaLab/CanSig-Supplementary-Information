@@ -11,6 +11,7 @@ from hydra.core.config_store import ConfigStore
 from hydra_plugins.hydra_submitit_launcher.config import SlurmQueueConf
 from omegaconf import OmegaConf
 
+from slurm_utils import SlurmCPU
 from data import read_anndata, DataConfig
 from utils import load_latent
 
@@ -26,17 +27,11 @@ class Config:
     hydra: Dict[str, Any] = field(default_factory=lambda: {"job": {"chdir": False}})
 
 
-@dataclass
-class Slurm(SlurmQueueConf):
-    mem_gb: int = 16
-    timeout_min: int = 720
-
-
 OmegaConf.register_new_resolver("run_dir", get_directory_name)
 
 cs = ConfigStore.instance()
 cs.store(name="config", node=Config)
-cs.store(group="hydra/launcher", name="slurm", node=Slurm, provider="submitit_launcher")
+cs.store(group="hydra/launcher", name="slurmcpu", node=SlurmCPU, provider="submitit_launcher")
 
 
 @hydra.main(config_name="config", config_path=None, version_base="1.1")

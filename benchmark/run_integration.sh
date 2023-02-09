@@ -1,6 +1,6 @@
 #!/bin/sh
 
-LAUNCHER="slurm"
+LAUNCHER="slurm_cpu"
 DATA_PATH="/cluster/work/boeva/scRNAdata/benchmark/real_data"
 RESULTS_PATH="/cluster/work/boeva/scRNAdata/benchmark/real_data_results"
 

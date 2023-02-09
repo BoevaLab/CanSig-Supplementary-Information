@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 
 import hydra
 import pandas as pd
@@ -9,6 +9,7 @@ from cansig.filesys import get_directory_name
 from hydra.core.config_store import ConfigStore
 from omegaconf import OmegaConf
 
+from slurm_utils import SlurmCPU, SlurmGPU
 from data import read_anndata, DataConfig
 from models import (
     ModelConfig,
@@ -26,7 +27,6 @@ from models import (
 )
 from utils import (save_latent, get_gres, get_partition,
                    hydra_run_sweep)
-from hydra_plugins.hydra_submitit_launcher.config import SlurmQueueConf
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -36,21 +36,6 @@ class Config:
     data: DataConfig = DataConfig()
     results_path: str = "/cluster/work/boeva/scRNAdata/benchmark/results"
     hydra: Dict[str, Any] = field(default_factory=hydra_run_sweep)
-
-
-@dataclass
-class SlurmCPU(SlurmQueueConf):
-    mem_gb: int = 16
-    timeout_min: int = 720
-    partition: str = "compute"
-    gres: Optional[str] = None
-
-
-class SlurmGPU(SlurmQueueConf):
-    mem_gb: int = 16
-    timeout_min: int = 720
-    partition: str = "gpu"
-    gres: Optional[str] = "gpu:rtx2080ti:1"
 
 
 
