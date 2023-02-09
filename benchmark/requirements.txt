@@ -15,11 +15,3 @@ scanorama
 mnnpy
 scgen
 desc
-pyliger
-#pyliger dependencies
-numexpr
-seaborn
-plotnine
-mygene
-goatools
-adjustText

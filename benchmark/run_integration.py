@@ -22,7 +22,7 @@ from models import (
     ScanVIConfig,
     TrVAEpConfig,
     ScGENConfig,
-    run_model, CombatConfig, DescConfig, LigerConfig,
+    run_model, CombatConfig, DescConfig,
 )
 from utils import (save_latent, get_gres, get_partition,
                    hydra_run_sweep)
@@ -65,8 +65,6 @@ cs.store(group="model", name="dhaka", node=DhakaConfig)
 cs.store(group="model", name="scanvi", node=ScanVIConfig)
 cs.store(group="model", name="trvaep", node=TrVAEpConfig)
 cs.store(group="model", name="scgen", node=ScGENConfig)
-cs.store(group="model", name="liger", node=LigerConfig)
-
 
 @hydra.main(config_name="config", config_path=None, version_base="1.1")
 def main(cfg: Config):

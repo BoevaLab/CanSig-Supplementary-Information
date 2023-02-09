@@ -506,38 +506,3 @@ def run_desc(adata: AnnData, config: DescConfig) -> AnnData:
 
     return adata_out
 
-
-@dataclass
-class LigerConfig(ModelConfig):
-    name: str = "liger"
-    k: int = 30
-    value_lambda: float = 5.0
-    thresh: float = 1e-6
-
-
-def run_liger(adata: AnnData, config: LigerConfig):
-
-    bdata = adata.copy()
-    batch_cats = bdata.obs[config.batch_key].unique()
-    bdata.X = bdata.layers["counts"]
-    adata_list = [bdata[bdata.obs[config.batch_key] == b].copy() for b in batch_cats]
-    for i, ad in enumerate(adata_list):
-        ad.uns["sample_name"] = batch_cats[i]
-        # Hack to make sure each method uses the same genes
-        ad.uns["var_gene_idx"] = np.arange(bdata.n_vars)
-
-
-    liger_data = pyliger.create_liger(adata_list, remove_missing=False, make_sparse=False)
-    # Hack to make sure each method uses the same genes
-    liger_data.var_genes = bdata.var_names
-    pyliger.normalize(liger_data)
-    pyliger.scale_not_center(liger_data)
-    pyliger.optimize_ALS(liger_data, k=config.k, value_lambda=config.value_lambda, thresh=config.thresh)
-    pyliger.quantile_norm(liger_data)
-
-
-    adata.obsm[config.latent_key] = np.zeros((adata.shape[0], liger_data.adata_list[0].obsm["H_norm"].shape[1]))
-    for i, b in enumerate(batch_cats):
-        adata.obsm[config.latent_key][adata.obs[config.batch_key] == b] = liger_data.adata_list[i].obsm["H_norm"]
-
-    return adata
