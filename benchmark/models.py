@@ -1,4 +1,3 @@
-import logging
 import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -228,13 +227,12 @@ def run_bbknn(adata: AnnData, config: BBKNNConfig) -> AnnData:
 class SCVIConfig(ModelConfig):
     name: str = "scvi"
     gpu: bool = True
-    covariates: Optional[List] = field(
-        default_factory=lambda: ["S_score", "G2M_score"]
-    )
     n_latent: int = 10
     n_hidden: int = 128
     n_layers: int = 1
     max_epochs: int = 400
+    cell_cycle: bool = False
+    log_counts: bool = False
 
 
 def run_scvi(adata: AnnData, config: SCVIConfig) -> AnnData:
@@ -243,8 +241,17 @@ def run_scvi(adata: AnnData, config: SCVIConfig) -> AnnData:
     sc.pp.highly_variable_genes(adata, n_top_genes=config.n_top_genes)
     bdata = adata[:, adata.var["highly_variable"]].copy()
 
+    covariates = []
+    if config.cell_cycle:
+        covariates += ["S_score", "G2M_score"]
+
+    if config.log_counts:
+        covariates += ["log_counts"]
+
+    covariates = covariates or None
+
     scvi.model.SCVI.setup_anndata(bdata, layer="counts", batch_key=config.batch_key,
-                                  continuous_covariate_keys=config.covariates)
+                                  continuous_covariate_keys=covariates)
     model = scvi.model.SCVI(
         bdata,
         n_latent=config.n_latent,
@@ -266,7 +273,7 @@ class ScanoramaConfig(ModelConfig):
     name: str = "scanorama"
     knn: int = 20
     sigma: float = 15.0
-    approx: bool = True
+    approx: bool = False
     alpha: float = 0.1
 
 
@@ -296,6 +303,7 @@ class HarmonyConfig(ModelConfig):
     max_iter_kmeans: int = 100
     theta: float = 1.0
     lamb: float = 1.0
+    sigma: float = 0.1
     epsilon_cluster: float = 1e-5
     epsilon_harmony: float = 1e-4
     random_state: int = 0
@@ -310,6 +318,7 @@ def run_harmony(adata: AnnData, config: HarmonyConfig) -> AnnData:
         theta=config.theta,
         lamb=config.lamb,
         adjusted_basis=config.latent_key,
+        sigma=config.sigma,
         max_iter_harmony=config.max_iter_harmony,
         max_iter_kmeans=config.max_iter_kmeans,
         epsilon_cluster=config.epsilon_cluster,
@@ -335,9 +344,8 @@ class CanSigConfig(ModelConfig):
     batch_effect_max_epochs: int = 400
     beta: float = 1.0
     batch_effect_beta: float = 1.0
-    covariates: Optional[List] = field(
-        default_factory=lambda: ["S_score", "G2M_score"]
-    )
+    cell_cycle: bool = False
+    log_counts: bool = False
     annealing: str = "linear"
     malignant_key: str = "malignant_key"
     malignant_cat: str = "malignant"
@@ -353,13 +361,22 @@ def run_cansig(adata: AnnData, config: CanSigConfig) -> AnnData:
         malignant_key=config.malignant_key,
         malignant_cat=config.malignant_cat,
     )
+    covariates = []
+    if config.cell_cycle:
+        covariates += ["S_score", "G2M_score"]
+
+    if config.log_counts:
+        covariates += ["log_counts"]
+
+    covariates = covariates or None
+
     CanSig.setup_anndata(
         bdata,
         celltype_key=config.celltype_key,
         malignant_key=config.malignant_key,
         malignant_cat=config.malignant_cat,
         non_malignant_cat=config.non_malignant_cat,
-        continuous_covariate_keys=config.covariates,
+        continuous_covariate_keys=covariates,
         layer="counts",
     )
     model = CanSig(
@@ -489,39 +506,3 @@ def run_desc(adata: AnnData, config: DescConfig) -> AnnData:
     adata_out.obsm[config.latent_key] = adata_out.obsm["X_Embeded_z" + str(config.res)]
 
     return adata_out
-
-
-@dataclass
-class LigerConfig(ModelConfig):
-    name: str = "liger"
-    k: int = 30
-    value_lambda: float = 5.0
-    thresh: float = 1e-6
-
-
-def run_liger(adata: AnnData, config: LigerConfig):
-
-    bdata = adata.copy()
-    batch_cats = bdata.obs[config.batch_key].unique()
-    bdata.X = bdata.layers["counts"]
-    adata_list = [bdata[bdata.obs[config.batch_key] == b].copy() for b in batch_cats]
-    for i, ad in enumerate(adata_list):
-        ad.uns["sample_name"] = batch_cats[i]
-        # Hack to make sure each method uses the same genes
-        ad.uns["var_gene_idx"] = np.arange(bdata.n_vars)
-
-
-    liger_data = pyliger.create_liger(adata_list, remove_missing=False, make_sparse=False)
-    # Hack to make sure each method uses the same genes
-    liger_data.var_genes = bdata.var_names
-    pyliger.normalize(liger_data)
-    pyliger.scale_not_center(liger_data)
-    pyliger.optimize_ALS(liger_data, k=config.k, value_lambda=config.value_lambda, thresh=config.thresh)
-    pyliger.quantile_norm(liger_data)
-
-
-    adata.obsm[config.latent_key] = np.zeros((adata.shape[0], liger_data.adata_list[0].obsm["H_norm"].shape[1]))
-    for i, b in enumerate(batch_cats):
-        adata.obsm[config.latent_key][adata.obs[config.batch_key] == b] = liger_data.adata_list[i].obsm["H_norm"]
-
-    return adata

@@ -1,3 +1,4 @@
+import logging
 from typing import Literal  # pytype: disable=not-supported-yet
 from typing import Optional
 
@@ -6,6 +7,8 @@ import numpy as np
 import pydantic  # pytype: disable=import-error
 import scanpy as sc  # pytype: disable=import-error
 from anndata import AnnData
+
+_LOGGER = logging.getLogger(__name__)
 
 _SupportedMetric = Literal[
     "cityblock",
@@ -61,7 +64,7 @@ class BinSearchSettings(pydantic.BaseModel):
         default=1e-3, description="The minimal resolution."
     )
     end: pydantic.PositiveFloat = pydantic.Field(
-        default=10.0, description="The maximal resolution."
+        default=5.0, description="The maximal resolution."
     )
     epsilon: pydantic.PositiveFloat = pydantic.Field(
         default=1e-3,
@@ -142,6 +145,7 @@ def _binary_search_leiden_resolution(
     # Get the number of clusters found
     selected_k = adata.obs[key_added].nunique()
     if selected_k == k:
+        _LOGGER.info(f"Binary seach finished with {res} resolution.")
         return adata
 
     # If the start and the end are too close (and there is no point in doing another

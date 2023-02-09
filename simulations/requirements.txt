@@ -1,8 +1,0 @@
-anndata
-infercnvpy
-matplotlib
-numpy
-pandas
-pytest
-scanpy
-scvi-tools
