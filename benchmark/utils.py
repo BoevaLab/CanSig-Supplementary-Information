@@ -25,8 +25,8 @@ def hydra_run_sweep():
     RUN_SWEEP_DEFAULTS = {
         "run": {"dir": "${results_path}/${model.name}/${run_dir:}"},
         "sweep": {
-            "dir": "${results_path}/${model.name}",
-            "subdir": "${run_dir:}",
+            "dir": "${results_path}",
+            "subdir": "${model.name}/${run_dir:}",
         }
     }
     return RUN_SWEEP_DEFAULTS
