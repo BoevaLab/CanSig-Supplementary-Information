@@ -6,6 +6,10 @@ import numpy as np
 import scanpy as sc
 from cansig import run_preprocessing
 from omegaconf import DictConfig
+import logging
+
+_LOGGER = logging.getLogger(__name__)
+
 
 from utils import (
     get_samples,
@@ -18,6 +22,7 @@ from utils import (
 
 
 def quality_control_10x(adata: anndata.AnnData) -> anndata.AnnData:
+    _LOGGER.info(f"Starting qc with {adata.n_obs} cells and {adata.n_vars} genes.")
     sc.pp.filter_cells(adata, min_counts=1_500)
     sc.pp.filter_cells(adata, max_counts=50_000)
     adata.var["mt"] = adata.var_names.str.startswith("MT-")
@@ -26,6 +31,7 @@ def quality_control_10x(adata: anndata.AnnData) -> anndata.AnnData:
                                inplace=True)
     adata = adata[adata.obs["pct_counts_mt"] < 20.0].copy()
     sc.pp.filter_genes(adata, min_cells=int(0.01 * adata.n_obs))
+    _LOGGER.info(f"Finished qc with {adata.n_obs} cells and {adata.n_vars} genes.")
     return adata
 
 

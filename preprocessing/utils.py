@@ -6,6 +6,7 @@ import anndata
 import pandas as pd
 from scipy import sparse
 
+_LOGGER = logging.getLogger(__name__)
 
 def get_samples(cfg):
     """
@@ -17,7 +18,7 @@ def get_samples(cfg):
     expected to be (index, sample_id, path_counts, path_annotation).
     :return: List of dicts containing sample path information.
     """
-
+    _LOGGER.info("Start loading data.")
     df = pd.read_csv(cfg.meta_data_path, index_col=0, sep=cfg.sep)
     samples = df.to_dict("records")
 
@@ -56,6 +57,7 @@ def load_adata(sample_info):
 
 
 def get_scoring_dict(cfg):
+    _LOGGER.info("Generating scoring dict.")
     scoring_dict = {}
     for score in cfg.scores:
         scoring_gene = pd.read_csv(score.annotation).iloc[:, 0].to_list()
@@ -71,7 +73,7 @@ def get_reference_groups(groups):
             reference_groups.append((group,))
         else:
             reference_groups.append(tuple(group))
-
+    _LOGGER.info(f"Loaded the following reference groups: {reference_groups}")
     return reference_groups
 
 
@@ -83,7 +85,7 @@ def mkdirs(cfg) -> None:
     for path in cfg.dirs.values():
         if path.endswith("_LAST"):
             continue
-        logging.info(f"Making dir: {path}")
+        _LOGGER.info(f"Making dir: {path}")
         os.makedirs(path, exist_ok=True)
 
 
