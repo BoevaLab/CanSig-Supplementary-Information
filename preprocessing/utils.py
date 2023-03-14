@@ -90,6 +90,7 @@ def mkdirs(cfg) -> None:
 
 
 def symlink_force(target, link_name):
+    _LOGGER.info("Generating link to the malignant dataset.")
     try:
         os.symlink(target, link_name)
     except OSError as e:

@@ -35,6 +35,17 @@ def quality_control_10x(adata: anndata.AnnData) -> anndata.AnnData:
     return adata
 
 
+def quality_control_smart_seq(adata:anndata.AnnData) -> anndata.AnnData:
+    _LOGGER.info(f"Starting qc with {adata.n_obs} cells and {adata.n_vars} genes.")
+    sc.pp.filter_cells(adata, min_genes=3_000)
+    adata.var["mt"] = adata.var_names.str.startswith("MT-")
+    sc.pp.calculate_qc_metrics(adata, qc_vars=["mt"], percent_top=None,
+                               log1p=False,
+                               inplace=True)
+    adata = adata[adata.obs["pct_counts_mt"] < 20.0].copy()
+    sc.pp.filter_genes(adata, min_cells=int(0.01 * adata.n_obs))
+    _LOGGER.info(f"Finished qc with {adata.n_obs} cells and {adata.n_vars} genes.")
+    return adata
 @hydra.main(config_path="conf", config_name="config", version_base="1.1")
 def main(cfg: DictConfig):
     mkdirs(cfg)
@@ -46,8 +57,10 @@ def main(cfg: DictConfig):
 
     adata = anndata.concat(adatas, join="outer")
 
-    if cfg.cancer.type not in ["glioblastoma"]:
+    if cfg.cancer.type not in ["glioblastoma", "tirosh_mel"]:
         adata = quality_control_10x(adata)
+    else:
+        adata = quality_control_smart_seq(adata)
 
     scoring_dict = get_scoring_dict(cfg.cancer.scoring)
     reference_groups = get_reference_groups(cfg.cancer.reference)
