@@ -58,9 +58,8 @@ def load_adata(sample_info):
 def get_scoring_dict(cfg):
     scoring_dict = {}
     for score in cfg.scores:
-        if score["type"] == "gene_scoring":
-            scoring_gene = pd.read_csv(score.annotation).iloc[:, 0].to_list()
-            scoring_dict[score.name] = scoring_gene
+        scoring_gene = pd.read_csv(score.annotation).iloc[:, 0].to_list()
+        scoring_dict[score.name] = scoring_gene
 
     return scoring_dict
 
