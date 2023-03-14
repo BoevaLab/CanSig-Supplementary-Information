@@ -1,7 +1,7 @@
 type: ???
 
 experiment:
-  name: MISSING
+  name: ""
 
 data:
   meta_data_path: ???
