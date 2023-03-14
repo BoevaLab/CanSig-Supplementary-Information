@@ -29,7 +29,7 @@ def quality_control_10x(adata: anndata.AnnData) -> anndata.AnnData:
     return adata
 
 
-@hydra.main(config_path="conf", config_name="config")
+@hydra.main(config_path="conf", config_name="config", version_base="1.1")
 def main(cfg: DictConfig):
     mkdirs(cfg)
     adatas = []
