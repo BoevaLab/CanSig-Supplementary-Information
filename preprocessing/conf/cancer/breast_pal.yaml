@@ -1,0 +1,45 @@
+defaults:
+  - base_cancer
+
+type: breast_pal
+
+data:
+  meta_data_path: /cluster/work/boeva/scRNAdata/raw/breast_pal/metadata/metadata.csv
+
+unhealthy:
+
+  - HER
+  - HER 1
+  - HER Cycling
+  - HER 2
+  - TNBC
+  - TNBC Cycling
+  - ER
+  - ER Cycling
+  - ER 2
+
+reference:
+
+  - 
+    - TAMs
+  - 
+    - T cells
+  - 
+    - Plasma cells
+  - 
+    - Endothelial
+  - 
+    - B cells
+  - 
+    - Pericytes
+  - 
+    - Myeloid
+
+undecided:
+
+  - Undetermined
+
+
+
+
+

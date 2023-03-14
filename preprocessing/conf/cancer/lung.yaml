@@ -1,0 +1,422 @@
+defaults:
+  - base_cancer
+
+type: lung
+
+data:
+  meta_data_path: /cluster/dataset/boeva/scRNAdata/raw/lung/meta_data/meta_data.csv
+  sep: "\t"
+
+qc:
+  min_counts: 1500
+  max_counts: 50000
+  threshold_mt: 20.
+  min_genes: 700
+
+scoring:
+  n_hvg: 2000
+  scores:
+# List of genes specific to malignant and normal epithelial cells
+## Malignant cells
+### State 1
+    - name: tS1_marker
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/tS1_marker.csv
+
+    - name: tS1_short
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/tS1_short.csv
+
+    - name: tS1_medium
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/tS1_medium.csv
+
+    - name: tS1_long
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/tS1_long.csv
+
+### State 2
+    - name: tS2_marker
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/tS2_marker.csv
+
+    - name: tS2_short
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/tS2_short.csv
+
+    - name: tS2_medium
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/tS2_medium.csv
+
+    - name: tS2_long
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/tS2_long.csv
+
+### State 3
+    - name: tS3_marker
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/tS3_marker.csv
+
+    - name: tS3_short
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/tS3_short.csv
+
+    - name: tS3_medium
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/tS3_medium.csv
+
+    - name: tS3_long
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/tS3_long.csv
+
+## Normal cells
+### State 1
+    - name: nS1_short
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/nS1_short.csv
+
+    - name: nS1_medium
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/nS1_medium.csv
+
+    - name: nS1_long
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/nS1_long.csv
+
+### State 2
+    - name: nS2_short
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/nS2_short.csv
+
+    - name: nS2_medium
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/nS2_medium.csv
+
+    - name: nS2_long
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/nS2_long.csv
+
+### State 3
+    - name: nS3_short
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/nS3_short.csv
+
+    - name: nS3_medium
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/nS3_medium.csv
+
+    - name: nS3_long
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/nS3_long.csv
+
+## Club cells
+### State 1
+    - name: clubS1_short
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/clubS1_short.csv
+
+    - name: clubS1_medium
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/clubS1_medium.csv
+
+    - name: clubS1_long
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/clubS1_long.csv
+
+### State 2
+    - name: clubS2_short
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/clubS2_short.csv
+
+    - name: clubS2_medium
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/clubS2_medium.csv
+
+    - name: clubS2_long
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/clubS2_long.csv
+
+### State 3
+    - name: clubS3_short
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/clubS3_short.csv
+
+    - name: clubS3_medium
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/clubS3_medium.csv
+
+    - name: clubS3_long
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/epithelial/clubS3_long.csv
+
+# List of genes specific to tLB, mLN, mBrain and metastases
+## metastases
+    - name: metastases_upregulated
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/metastases/metastases_upregulated.csv
+
+## mBrain
+    - name: mBrain_upregulated
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/metastases/mBrain_upregulated.csv
+
+    - name: mBrain_short
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/metastases/mBrain_short.csv
+
+    - name: mBrain_medium
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/metastases/mBrain_medium.csv
+
+    - name: mBrain_long
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/metastases/mBrain_long.csv
+
+## mLN
+    - name: mLN_upregulated
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/metastases/mLN_upregulated.csv
+
+    - name: mLN_short
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/metastases/mLN_short.csv
+
+    - name: mLN_medium
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/metastases/mLN_medium.csv
+
+    - name: mLN_long
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/metastases/mLN_long.csv
+
+## tLB
+    - name: tLB_upregulated
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/metastases/tLB_upregulated.csv
+
+    - name: tLB_short
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/metastases/tLB_short.csv
+
+    - name: tLB_medium
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/metastases/tLB_medium.csv
+
+    - name: tLB_long
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/metastases/tLB_long.csv
+
+# List of genes from agnieszka's programs
+    - name: program1
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/agnieszka/program_1.csv
+
+    - name: program2
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/agnieszka/program_2.csv
+
+    - name: program4
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/agnieszka/program_4.csv
+
+    - name: program5
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/agnieszka/program_5.csv
+
+    - name: program6
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/agnieszka/program_6.csv
+
+# Signatures from other papers
+## EGFR mutations
+    - name: EGFR_mutations
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/mitsudomi/EGFR_mutations.csv
+
+    - name: EGFR_mutations_all
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/mitsudomi/EGFR_mutations_all.csv
+
+    - name: EGFR_mutations_TRU_type
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/mitsudomi/EGFR_mutations_TRU_type.csv
+
+## Upregulated genes in adenocarcinoma & SCC
+    - name: upregulated_adc
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/niemira/upregulated_adc.csv
+
+    - name: upregulated_adc_scc
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/niemira/upregulated_adc_scc.csv
+
+    - name: upregulated_scc
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/niemira/upregulated_scc.csv
+
+## Distinction of adenocarcinoma
+    - name: cell_adhesion_ac
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/rohrbeck/cell_adhesion_ac.csv
+    - name: cell_structure_ac
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/rohrbeck/cell_structure_ac.csv
+    - name: oncogenesis_ac
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/rohrbeck/oncogenesis_ac.csv
+    - name: distinction_combined_ac
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/rohrbeck/distinction_combined_ac.csv
+
+## Discrimination of NSCLC subtypes
+    - name: discrimination_ac
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/rohrbeck/discrimination_ac.csv
+
+    - name: discrimination_nt
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/rohrbeck/discrimination_nt.csv
+
+    - name: discrimination_scc
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/rohrbeck/discrimination_scc.csv
+
+    - name: discrimination_sclc
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/rohrbeck/discrimination_sclc.csv
+
+## Survival prediction
+    - name: survival_prediction_100genes
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/other/survival_prediction_100genes.csv
+
+    - name: survival_prediction_short
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/other/survival_prediction_short.csv
+
+## 12 gene signature of metastases
+    - name: diagnostic_metastases_nsclc
+      type: gene_scoring
+      gene_pool: hvg_cancer
+      annotation: ${annotations.root}/${cancer.type}/other/diagnostic_metastases_nsclc.csv
+
+
+unhealthy:
+  - Malignant cells
+  - tS1
+  - tS2
+  - tS3
+
+undecided:
+  - Undetermined
+
+reference:
+  - mo-Mac
+  - Monocytes
+  - Alveolar Mac
+  - Pleural Mac
+  - CD1c+ DCs
+  - CD141+ DCs
+  - pDCs
+  - CD163+CD14+ DCs
+  - Activated DCs
+  - Cytotoxic CD8+ T
+  - Exhausted CD8+ T
+  - Naive CD8+ T
+  - CD8 low T
+  - Naive CD4+ T
+  - Treg
+  - CD4+ Th
+  - NK
+  - GrB-secreting B cells
+  - MALT B cells
+  - Follicular B cells
+  - COL13A1+ matrix FBs
+  - Smooth muscle cells
+  - Tip-like ECs
+  - Stalk-like ECs
+  - Lymphatic ECs
+  - MAST
+  - AT1
+  - AT2
+  - Ciliated
+  - Club
+  - NA
+  - Plasma cells
+  - COL14A1+ matrix FBs
+  - Mesothelial cells
+  - Exhausted Tfh
+  - Pericytes
+  - Tumor ECs
+  - EPCs
+  - Myofibroblasts
+  - CD8+/CD4+ Mixed Th
+  - CD207+CD1a+ LCs
+  - GC B cells in the DZ
+  - FB-like cells
+  - GC B cells in the LZ
+  - Microglia/Mac

@@ -1,0 +1,25 @@
+verbosity: 0
+
+hydra:
+  run:
+    dir: .
+
+dirs:
+  root: /cluster/work/boeva/scRNAdata/preprocessed
+  results_path: ${dirs.root}/${cancer.type}/${cancer.experiment.name}${now:%Y-%m-%d}_${now:%H-%M-%S}
+  last_path: ${dirs.root}/${cancer.type}/_LAST
+  meta_data: ${dirs.results_path}/meta_data
+  data: ${dirs.results_path}/data
+  figures: ${dirs.results_path}/figures
+
+files:
+  data: ${dirs.data}/data.h5ad
+  malignant: ${dirs.data}/malignant.h5ad
+  non_malignant: ${dirs.data}/non_malignant.h5ad
+  stats: ${dirs.meta_data}/stats.csv
+  config: ${dirs.meta_data}/config.yaml
+
+annotations:
+  root: /cluster/work/boeva/scRNAdata/annotations
+  gene_order: ${annotations.root}/gene_order.csv
+

@@ -1,0 +1,49 @@
+defaults:
+        - base_cancer
+type: scc_red
+data:
+        type: meta_data
+        meta_data_path: /cluster/dataset/boeva/scRNAdata/raw/SCC/metadata/metadata.csv
+
+scoring:
+  scores:
+
+    - name: Basal
+      annotation: ${annotations.root}/${cancer.type}/basal.csv
+
+    - name: Cycling
+      annotation: ${annotations.root}/${cancer.type}/cycling.csv
+
+    - name: TSK
+      annotation: ${annotations.root}/${cancer.type}/TSK.csv
+
+    - name: Differentiated
+      annotation: ${annotations.root}/${cancer.type}/diff.csv
+
+unhealthy:
+        - Tumor_KC_Basal
+        - Tumor_KC_Cyc
+        - Tumor_KC_Diff
+        - TSK
+        - Keratinocyte
+reference:
+-
+  - Endothelial Cell
+  - Fibroblast
+-
+  - B Cell
+-
+  - LC
+  - PDC
+  - CLEC9A
+  - CD1C
+  - Mac
+  - ASDC
+  - MDSC
+-
+  - Normal_KC_Basal
+  - Normal_KC_Diff
+  - Normal_KC_Cyc
+-
+  - Tcell
+

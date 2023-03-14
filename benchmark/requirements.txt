@@ -11,6 +11,8 @@ pytest
 scanpy
 scvi-tools
 scib-metrics
+cansig-integration
+scib-metrics
 scanorama
 mnnpy
 scgen

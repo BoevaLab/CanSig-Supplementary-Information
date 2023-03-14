@@ -1,0 +1,44 @@
+defaults:
+  - base_cancer
+
+type: glioblastoma
+
+data:
+  meta_data_path: /cluster/work/boeva/scRNAdata/raw/glioblastoma_ss_neftel/metadata/metadata.csv
+
+scoring:
+  scores:
+    - name: mesenchymal1_score
+      annotation: ${annotations.root}/${cancer.type}/mes1.csv
+
+    - name: mesenchymal2_score
+      annotation: ${annotations.root}/${cancer.type}/mes2.csv
+
+    - name: astrocyte_score
+      annotation: ${annotations.root}/${cancer.type}/ac.csv
+
+    - name: neural_precursor1_score
+      annotation: ${annotations.root}/${cancer.type}/npc1.csv
+
+    - name: neural_precursor2_score
+      annotation: ${annotations.root}/${cancer.type}/npc2.csv
+
+    - name: oligodendrocytic_precursor_score
+      annotation: ${annotations.root}/${cancer.type}/opc.csv
+
+    - name: G1S_score_paper
+      annotation: ${annotations.root}/${cancer.type}/g1s.csv
+
+    - name: G2M_score_paper
+      annotation: ${annotations.root}/${cancer.type}/g2m.csv
+
+unhealthy:
+  - Malignant
+
+reference:
+  -
+    - Macrophage
+  -
+    - T-cell
+  -
+    - Oligodendrocyte

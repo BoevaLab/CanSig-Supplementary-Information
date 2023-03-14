@@ -1,0 +1,29 @@
+defaults:
+  - base_cancer
+
+type: npc
+
+data:
+  meta_data_path: /cluster/work/boeva/scRNAdata/raw/npc/metadata/metadata.csv
+
+unhealthy:
+
+  - Epithelial cell
+
+reference:
+
+  - 
+    - CD8 T cell
+    - CD4 T cell
+  - 
+   - NK cell
+  -
+    - B cell
+  - 
+    - Myeloid cell
+
+
+
+
+
+

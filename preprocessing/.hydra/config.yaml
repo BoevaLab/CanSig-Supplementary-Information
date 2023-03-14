@@ -1,0 +1,91 @@
+verbosity: 0
+dirs:
+  root: ./out
+  results_path: ${dirs.root}/${cancer.type}/${cancer.experiment.name}${now:%Y-%m-%d}_${now:%H-%M-%S}
+  last_path: ${dirs.root}/${cancer.type}/_LAST
+  meta_data: ${dirs.results_path}/meta_data
+  data: ${dirs.results_path}/data
+  figures: ${dirs.results_path}/figures
+files:
+  data: ${dirs.data}/data.h5ad
+  malignant: ${dirs.data}/malignant.h5ad
+  non_malignant: ${dirs.data}/non_malignant.h5ad
+  stats: ${dirs.meta_data}/stats.csv
+  config: ${dirs.meta_data}/config.yaml
+annotations:
+  root: /home/barkmann/BoevaLab/annotations
+  gene_order: ${annotations.root}/gene_order.csv
+cancer:
+  type: glioblastoma
+  experiment:
+    name: ''
+  data:
+    meta_data_path: /home/barkmann/BoevaLab/glioblastoma/metadata/metadata.csv
+    sep: ','
+    excluded_samples: []
+    included_samples: []
+    type: meta_data
+  qc:
+    min_counts: 1500
+    max_counts: 50000
+    threshold_mt: 35.0
+    min_genes: 700
+  infercnv:
+    window_size: 100
+    step: 1
+    min_reference_cells: 25
+  scoring:
+    n_hvg: 2000
+    cell_cycle: ${annotations.root}/cc_genes_2.csv
+    apoptosis:
+      name: apoptosis_score
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/apoptosis_signature.csv
+    oxphos:
+      name: oxphos
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/hallmark_oxphos.csv
+    scores:
+    - name: mesenchymal1_score
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/mes1.csv
+    - name: mesenchymal2_score
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/mes2.csv
+    - name: astrocyte_score
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/ac.csv
+    - name: neural_precursor1_score
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/npc1.csv
+    - name: neural_precursor2_score
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/npc2.csv
+    - name: oligodendrocytic_precursor_score
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/opc.csv
+    - name: G1S_score_paper
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/g1s.csv
+    - name: G2M_score_paper
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/g2m.csv
+  unhealthy:
+  - tumor
+  undecided: []
+  reference:
+  - - myeloid
+  - - endothelial
+  - - tcell
+  - - pericyte
+  - - oligo
