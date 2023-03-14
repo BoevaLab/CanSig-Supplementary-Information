@@ -12,7 +12,7 @@ scanpy
 scvi-tools
 scib-metrics
 cansig-integration
-scETM
+scib-metrics
 scanorama
 mnnpy
 scgen
