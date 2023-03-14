@@ -12,7 +12,6 @@ import scanpy as sc
 import scanpy.external as sce
 import scvi
 from anndata import AnnData
-from cansig.integration.model import CanSig
 from omegaconf import MISSING
 
 from utils import split_batches
@@ -354,7 +353,8 @@ class CanSigConfig(ModelConfig):
 
 
 def run_cansig(adata: AnnData, config: CanSigConfig) -> AnnData:
-    bdata = CanSig.preprocessing(
+    from cansig_integration.integration.model import CanSigIntegration
+    bdata = CanSigIntegration.preprocessing(
         adata.copy(),
         n_highly_variable_genes=config.n_top_genes,
         malignant_key=config.malignant_key,
@@ -369,7 +369,7 @@ def run_cansig(adata: AnnData, config: CanSigConfig) -> AnnData:
 
     covariates = covariates or None
 
-    CanSig.setup_anndata(
+    CanSigIntegration.setup_anndata(
         bdata,
         celltype_key=config.celltype_key,
         malignant_key=config.malignant_key,
@@ -378,7 +378,7 @@ def run_cansig(adata: AnnData, config: CanSigConfig) -> AnnData:
         continuous_covariate_keys=covariates,
         layer="counts",
     )
-    model = CanSig(
+    model = CanSigIntegration(
         bdata,
         n_latent=config.n_latent,
         n_layers=config.n_layers,
@@ -413,7 +413,7 @@ def run_cansig(adata: AnnData, config: CanSigConfig) -> AnnData:
 class MNNConfig(ModelConfig):
     name: str = "nmm"
     k: int = 20
-    sigma: float = 1.
+    sigma: float = 1
 
 
 def run_mnn(adata: AnnData, config: MNNConfig) -> AnnData:

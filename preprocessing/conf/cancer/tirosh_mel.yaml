@@ -1,0 +1,45 @@
+defaults:
+  - base_cancer
+
+type: tirosh_mel
+
+data:
+  type: meta_data
+  meta_data_path: /cluster/work/boeva/scRNAdata/raw/tirosh_mel/metadata/metadata.csv
+
+
+scoring:
+  scores:
+
+    - name: AXL
+      annotation: ${annotations.root}/${cancer.type}/axl_program.csv
+    
+    - name: Cycling
+      annotation: ${annotations.root}/${cancer.type}/cell_cycle_melspecific.csv
+
+    - name: MITF
+      annotation: ${annotations.root}/${cancer.type}/mitf_program.csv
+    
+
+unhealthy:
+  - Malignant
+
+reference:
+
+  - 
+    - T-cell
+  - 
+    - B-cell
+  - 
+    - Macrophage
+  - 
+    - Endothelial
+  - 
+    - CAF
+  - 
+    - NK
+
+
+
+
+

@@ -1,0 +1,41 @@
+defaults:
+  - base_cancer
+
+type: crc_icms
+
+data:
+  meta_data_path: /cluster/work/boeva/scRNAdata/raw/crc_icsm/metadata/metadata.csv
+
+
+scoring:
+  n_hvg: 2000
+  scores:
+
+    - name: iCMS2
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/iCSM2.csv
+    
+    - name: iCMS3
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/iCSM3.csv
+
+unhealthy:
+  - Epithelial
+
+reference:
+
+  -
+    - PlasmaB
+    - B
+  - T_NK
+  - Fibroblast
+  - 
+    - McDC
+    - pDC
+  - Endothelial
+  - Neutrophils
+  - Mast
+  - Entericglial
+

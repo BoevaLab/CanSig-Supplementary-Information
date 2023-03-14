@@ -1,0 +1,42 @@
+defaults:
+  - base_cancer
+
+type: luad
+
+data:
+  meta_data_path: /cluster/work/boeva/scRNAdata/raw/luad/metadata/metadata.csv
+
+scoring:
+  scores:
+    - name: tS1
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/ts1.csv
+
+    - name: tS2
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/ts2.csv
+
+    - name: tS3
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/ts3.csv
+
+unhealthy:
+  - Malignant
+
+reference:
+  - T_cell
+  - NK_cell
+  - Macrophage
+  - Monocyte
+  - Dendritic
+  - Epithelial
+  - Malignant
+  - Granulocytes
+  - B_cell
+  - Endothelial
+  - Mast
+  - Fibroblast
+  - Erythroblast

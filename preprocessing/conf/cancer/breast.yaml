@@ -1,0 +1,59 @@
+defaults:
+  - base_cancer
+
+type: breast
+
+data:
+  meta_data_path: /cluster/work/boeva/scRNAdata/raw/breast/metadata/metadata.csv
+
+scoring:
+  scores:
+
+    - name: Basal_SC
+      annotation: ${annotations.root}/${cancer.type}/genesig_Basal_SC.csv
+    
+    - name: Her2E_SC
+      annotation: ${annotations.root}/${cancer.type}/genesig_Her2E_SC.csv
+
+    - name: LumA_SC
+      annotation: ${annotations.root}/${cancer.type}/genesig_LumA_SC.csv
+
+    - name: LumB_SC
+      annotation: ${annotations.root}/${cancer.type}/genesig_LumB_SC.csv
+
+    - name: GM1
+      annotation: ${annotations.root}/${cancer.type}/genesig_GM1.csv
+
+    - name: GM2
+      annotation: ${annotations.root}/${cancer.type}/genesig_GM2.csv
+
+    - name: GM3
+      annotation: ${annotations.root}/${cancer.type}/genesig_GM3.csv
+
+    - name: GM4
+      annotation: ${annotations.root}/${cancer.type}/genesig_GM4.csv
+
+    - name: GM5
+      annotation: ${annotations.root}/${cancer.type}/genesig_GM5.csv
+
+    - name: GM6
+      annotation: ${annotations.root}/${cancer.type}/genesig_GM6.csv
+
+    - name: GM7
+      annotation: ${annotations.root}/${cancer.type}/genesig_GM7.csv
+
+unhealthy:
+  - Cancer Epithelial
+
+undecided:
+  - Undetermined
+
+reference:
+  -
+    - Endothelial
+    - Normal Epithelial
+  - PVL
+  - B-cells
+  - T-cells
+  - Myeloid
+  - Plasmablasts

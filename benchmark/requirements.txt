@@ -10,6 +10,8 @@ pandas
 pytest
 scanpy
 scvi-tools
+scib-metrics
+cansig-integration
 scETM
 scanorama
 mnnpy

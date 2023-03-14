@@ -1,0 +1,46 @@
+defaults:
+  - base_cancer
+
+type: bladder
+
+data:
+  meta_data_path: /cluster/work/boeva/scRNAdata/raw/bladder/metadata/metadata.csv
+
+
+scoring:
+  scores:
+
+    - name: CDH12
+      annotation: ${annotations.root}/${cancer.type}/CDH12_Epithelial.csv
+    
+    - name: Cycling
+      annotation: ${annotations.root}/${cancer.type}/Cycling_Epithelial.csv
+
+    - name: KRT6A
+      annotation: ${annotations.root}/${cancer.type}/KRT6A_Epithelial.csv
+
+    - name: KRT13
+      annotation: ${annotations.root}/${cancer.type}/KRT13_Epithelial.csv
+
+    - name: UPK
+      annotation: ${annotations.root}/${cancer.type}/UPK_Epithelial.csv
+    
+
+unhealthy:
+
+  - Epithelial
+
+reference:
+
+  - 
+    - Lymphocyte
+  - 
+    - Fibroblast
+  - 
+    - Myeloid
+  - 
+    - Endothelial
+
+
+
+

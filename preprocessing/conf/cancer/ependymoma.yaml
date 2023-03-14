@@ -1,0 +1,114 @@
+defaults:
+  - base_cancer
+
+type: ependymoma
+
+data:
+  meta_data_path: /cluster/work/boeva/scRNAdata/raw/ependymoma/metadata/metadata.csv
+
+
+scoring:
+  scores:
+
+    - name: CEC
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/CEC.csv
+    
+    - name: MEC
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/MEC.csv
+
+    - name: PFA-sc6
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/PFA-sc6.csv
+
+    - name: PFA-sc7
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/PFA-sc7.csv
+
+    - name: PFB
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/PFB.csv
+
+    - name: RELA-sc1
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/RELA-sc1.csv
+
+    - name: RELA-sc2
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/RELA-sc2.csv
+
+    - name: RELA-sc3
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/RELA-sc3.csv
+    
+    - name: RELA-sc4
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/RELA-sc4.csv
+    
+    - name: RELA-sc5
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/RELA-sc5.csv
+
+    - name: TEC
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/TEC.csv
+
+    - name: UEC-1
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/UEC-1.csv
+
+    - name: UEC-2
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/UEC-2.csv
+
+    - name: YAP
+      type: gene_scoring
+      gene_pool: full
+      annotation: ${annotations.root}/${cancer.type}/YAP.csv
+    
+
+unhealthy:
+  - CEC
+  - RELA-sc1
+  - RELA-sc2
+  - RELA-sc3
+  - RELA-sc4
+  - RELA-sc5
+  - UEC-1
+  - UEC-2 
+  - TEC
+  - MEC
+  - PFB
+  - PFA-sc6
+  - PFA-sc7
+  - YAP
+
+undecided:
+  - mitotic
+  - Doublets
+
+reference:
+  - 
+    - Myeloid
+  - 
+    - Lymphocytes
+  - 
+    - Oligodendrocytes
+
+
+
+

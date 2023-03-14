@@ -1,0 +1,40 @@
+type: ???
+
+experiment:
+  name: MISSING
+
+data:
+  meta_data_path: ???
+  sep: ","
+  excluded_samples: []
+  included_samples: []
+
+qc:
+  min_counts: 1500
+  max_counts: 50000
+  threshold_mt: 20.
+  min_genes: 700
+
+infercnv:
+  window_size: 100
+  step: 5
+  min_reference_cells: 25
+
+scoring:
+  cell_cycle: ${annotations.root}/cc_genes_2.csv
+  apoptosis:
+    name: apoptosis_score
+    type: gene_scoring
+    gene_pool: full
+    annotation: ${annotations.root}/apoptosis_signature.csv
+  oxphos:
+    name: oxphos
+    type: gene_scoring
+    gene_pool: full
+    annotation: ${annotations.root}/hallmark_oxphos.csv
+  scores: []
+
+
+unhealthy: []
+undecided: []
+reference: []

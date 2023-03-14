@@ -1,0 +1,43 @@
+defaults:
+  - base_cancer
+
+type: crc
+
+data:
+  meta_data_path: /cluster/work/boeva/scRNAdata/raw/crc/metadata/metadata.csv
+
+
+scoring:
+  n_hvg: 2000
+  scores:
+
+    - name: iCMS2
+      annotation: ${annotations.root}/crc_icsm/iCSM2.csv
+    
+    - name: iCMS3
+      annotation: ${annotations.root}/crc_icsm/iCSM3.csv
+
+unhealthy:
+  - Epi
+
+undecided:
+  - Undetermined
+
+reference:
+
+  -
+    - TCD4
+    - TCD8
+    - NK
+    - TZBTB16
+    - Tgd
+  - Endo
+  - Plasma
+  - B
+  - Fibro
+  - Mast
+  -
+    - Mono
+    - Macro
+    - DC
+

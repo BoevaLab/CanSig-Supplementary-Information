@@ -1,0 +1,51 @@
+defaults:
+  - base_cancer
+
+type: esophag
+
+data:
+  meta_data_path: /cluster/work/boeva/scRNAdata/raw/esophag/metadata/metadata.csv
+
+scoring:
+  scores:
+
+    - name: AP
+      annotation: ${annotations.root}/${cancer.type}/genesig_AP.csv
+    
+    - name: Cycling
+      annotation: ${annotations.root}/${cancer.type}/genesig_cycling.csv
+
+    - name: Epi1
+      annotation: ${annotations.root}/${cancer.type}/genesig_Epi1.csv
+
+    - name: Epi2
+      annotation: ${annotations.root}/${cancer.type}/genesig_Epi2.csv
+    
+    - name: Mes
+      annotation: ${annotations.root}/${cancer.type}/genesig_Mes.csv
+
+    - name: Mucosal
+      annotation: ${annotations.root}/${cancer.type}/genesig_mucosal.csv
+
+    - name: Oxd
+      annotation: ${annotations.root}/${cancer.type}/genesig_Oxd.csv
+
+    - name: Stress
+      annotation: ${annotations.root}/${cancer.type}/genesig_stress.csv
+
+unhealthy:
+  - Epi
+
+undecided:
+  - Undetermined
+
+reference:
+  -
+    - Pericytes
+    - Fibroblasts
+  -
+    - FRC
+    - Endothelial
+  - Myeloid
+  - Bcells
+  - Tcells

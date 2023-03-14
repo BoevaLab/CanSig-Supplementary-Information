@@ -1,0 +1,4 @@
+- +cancer=glioblastoma
+- ++cancer.data.meta_data_path=/home/barkmann/BoevaLab/glioblastoma/metadata/metadata.csv
+- ++dirs.root=./out
+- ++annotations.root=/home/barkmann/BoevaLab/annotations
