@@ -24,7 +24,7 @@ _LOGGER = logging.getLogger(__name__)
 class DataConfig:
     cancer: str = "npc" #TODO: make this optinal.
     base_dir: str = "/cluster/work/boeva/scRNAdata/preprocessed"
-    data_path: str = field(default_factory=lambda: "${data_path:${}}")
+    data_path: str = field(default_factory=lambda: "${data_path:${base_dir}, ${cancer}}")
     malignant_key: str = "malignant_key"
     malignant_cat: str = "malignant"
 
@@ -45,8 +45,8 @@ class Slurm(SlurmQueueConf):
     gres: Optional[str] = field(default_factory=lambda: "${get_gres:${model.gpu}}")
 
 
-def data_path(config: DataConfig) -> str:
-    data_path = pl.Path(config.base_dir).joinpath(config.cancer).joinpath("_LAST")
+def data_path(base_dir:str, cancer:str) -> str:
+    data_path = pl.Path(base_dir).joinpath(cancer).joinpath("_LAST")
     return str(data_path)
 
 
