@@ -19,30 +19,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
-class DataConfig:
-    cancer: str = "npc" #TODO: make this optinal.
-    base_dir: str = "/cluster/work/boeva/scRNAdata/preprocessed"
-    data_path: str = field(default_factory=lambda: "${data_path:${data.base_dir}, ${data.cancer}}")
-    malignant_key: str = "malignant_key"
-    malignant_cat: str = "malignant"
-
-
-@dataclass
-class Config:
-    data: DataConfig = DataConfig()
-    model: models.SCVIConfig = models.SCVIConfig()
-    results_path: str = "/cluster/work/boeva/scRNAdata/scvi_results"
-    hydra: Dict[str, Any] = field(default_factory=utils.hydra_run_sweep)
-
-
-@dataclass
-class Slurm(SlurmQueueConf):
-    mem_gb: int = 16
-    timeout_min: int = 720
-    partition: str = field(default_factory=lambda: "${get_partition:${model.gpu}}")
-    gres: Optional[str] = field(default_factory=lambda: "${get_gres:${model.gpu}}")
-
-@dataclass
 class ModelConfig:
     name: str = MISSING
     gpu: bool = False
@@ -63,6 +39,34 @@ class SCVIConfig(ModelConfig):
     cell_cycle: bool = False
     log_counts: bool = False
     pct_counts_mt: bool = False
+
+
+
+@dataclass
+class DataConfig:
+    cancer: str = "npc" #TODO: make this optinal.
+    base_dir: str = "/cluster/work/boeva/scRNAdata/preprocessed"
+    data_path: str = field(default_factory=lambda: "${data_path:${data.base_dir}, ${data.cancer}}")
+    malignant_key: str = "malignant_key"
+    malignant_cat: str = "malignant"
+
+
+@dataclass
+class Config:
+    data: DataConfig = DataConfig()
+    model: SCVIConfig = SCVIConfig()
+    results_path: str = "/cluster/work/boeva/scRNAdata/scvi_results"
+    hydra: Dict[str, Any] = field(default_factory=utils.hydra_run_sweep)
+
+
+@dataclass
+class Slurm(SlurmQueueConf):
+    mem_gb: int = 16
+    timeout_min: int = 720
+    partition: str = field(default_factory=lambda: "${get_partition:${model.gpu}}")
+    gres: Optional[str] = field(default_factory=lambda: "${get_gres:${model.gpu}}")
+
+
 
 
 def run_scvi(adata: anndata.AnnData, config: SCVIConfig) -> anndata.AnnData:
@@ -133,7 +137,7 @@ def main(cfg: Config) -> None:
     adata = read_anndata(data_config=cfg.data)
     n_clusters = sum(adata.obs.columns.str.endswith("_GT"))
     _LOGGER.info(f"Found {n_clusters} ground truth signatures.")
-    adata, _ = models.run_scvi(adata, cfg.model)
+    adata, _ = run_scvi(adata, cfg.model)
     cluster_config = cluster.LeidenNClusterConfig(clusters=n_clusters)
     clustering_algorithm = cluster.LeidenNCluster(cluster_config)
     labels = clustering_algorithm.fit_predict(adata.obs[cfg.model.latent_key])
