@@ -83,7 +83,7 @@ def main(cfg: DictConfig):
         scoring_dict=scoring_dict,
         window_size=cfg.cancer.infercnv.window_size,
         min_reference_cells=cfg.cancer.infercnv.min_reference_cells,
-        min_malignant_cells=min_malignant_cells
+        min_malignant_cells=min_malignant_cells,
         step=cfg.cancer.infercnv.step,
         figure_dir=cfg.dirs.figures,
     )
