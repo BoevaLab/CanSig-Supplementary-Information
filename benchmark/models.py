@@ -231,6 +231,7 @@ class SCVIConfig(ModelConfig):
     max_epochs: int = 400
     cell_cycle: bool = False
     log_counts: bool = False
+    pct_counts_mt: bool = False
 
 
 def run_scvi(adata: AnnData, config: SCVIConfig) -> AnnData:
@@ -245,6 +246,9 @@ def run_scvi(adata: AnnData, config: SCVIConfig) -> AnnData:
 
     if config.log_counts:
         covariates += ["log_counts"]
+
+    if config.pct_counts_mt:
+        covariates += ["pct_counts_mt"]
 
     covariates = covariates or None
 

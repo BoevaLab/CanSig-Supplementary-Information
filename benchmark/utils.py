@@ -23,10 +23,10 @@ def load_latent(path: Union[str, pl.Path]):
 
 def hydra_run_sweep():
     RUN_SWEEP_DEFAULTS = {
-        "run": {"dir": "${results_path}/${model.name}/${run_dir:}"},
+        "run": {"dir": "${results_path}/${data.cancer}/${run_dir:}"},
         "sweep": {
             "dir": "${results_path}",
-            "subdir": "${model.name}/${run_dir:}",
+            "subdir": "${data.cancer}/${run_dir:}",
         }
     }
     return RUN_SWEEP_DEFAULTS
