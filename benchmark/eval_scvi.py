@@ -11,7 +11,7 @@ import numpy as np
 from cansig.filesys import get_directory_name
 from hydra.core.config_store import ConfigStore
 from hydra_plugins.hydra_submitit_launcher.config import SlurmQueueConf
-from omegaconf import OmegaConf
+from omegaconf import OmegaConf, MISSING
 
 from models import run_scvi, SCVIConfig
 from utils import (get_gres, get_partition,
@@ -22,7 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class DataConfig:
-    cancer: Optional[str] = None
+    cancer: Any = MISSING
     base_dir: str = "/cluster/work/boeva/scRNAdata/preprocessed"
     data_path: str = field(default_factory=lambda: "${data_path:${data}}")
     malignant_key: str = "malignant_key"
