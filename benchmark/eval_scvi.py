@@ -22,7 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class DataConfig:
-    cancer: Any = MISSING
+    cancer: str = "npc" #TODO: make this optinal.
     base_dir: str = "/cluster/work/boeva/scRNAdata/preprocessed"
     data_path: str = field(default_factory=lambda: "${data_path:${data}}")
     malignant_key: str = "malignant_key"
