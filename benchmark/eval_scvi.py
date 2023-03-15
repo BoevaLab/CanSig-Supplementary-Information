@@ -31,7 +31,7 @@ class DataConfig:
 
 @dataclass
 class Config:
-    data: DataConfig
+    data: DataConfig()
     model: SCVIConfig = SCVIConfig()
     results_path: str = "/cluster/work/boeva/scRNAdata/scvi_results"
     hydra: Dict[str, Any] = field(default_factory=hydra_run_sweep)
