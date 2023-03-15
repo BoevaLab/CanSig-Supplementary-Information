@@ -61,8 +61,10 @@ def main(cfg: DictConfig):
 
     if cfg.cancer.type not in ["glioblastoma", "tirosh_mel"]:
         adata = quality_control_10x(adata)
+        min_malignant_cells=50
     else:
         adata = quality_control_smart_seq(adata)
+        min_malignant_cells=30
 
     scoring_dict = get_scoring_dict(cfg.cancer.scoring)
     reference_groups = get_reference_groups(cfg.cancer.reference)
@@ -81,6 +83,7 @@ def main(cfg: DictConfig):
         scoring_dict=scoring_dict,
         window_size=cfg.cancer.infercnv.window_size,
         min_reference_cells=cfg.cancer.infercnv.min_reference_cells,
+        min_malignant_cells=min_malignant_cells,
         step=cfg.cancer.infercnv.step,
         figure_dir=cfg.dirs.figures,
     )

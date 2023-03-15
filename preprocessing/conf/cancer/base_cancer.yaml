@@ -9,12 +9,6 @@ data:
   excluded_samples: []
   included_samples: []
 
-qc:
-  min_counts: 1500
-  max_counts: 50000
-  threshold_mt: 20.
-  min_genes: 700
-
 infercnv:
   window_size: 100
   step: 5
