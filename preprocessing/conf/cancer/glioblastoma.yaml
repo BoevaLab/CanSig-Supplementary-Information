@@ -8,29 +8,17 @@ data:
 
 scoring:
   scores:
-    - name: mesenchymal1_score
-      annotation: ${annotations.root}/${cancer.type}/mes1.csv
+    - name: mesenchymal
+      annotation: ${annotations.root}/${cancer.type}/mes.csv
 
-    - name: mesenchymal2_score
-      annotation: ${annotations.root}/${cancer.type}/mes2.csv
-
-    - name: astrocyte_score
+    - name: astrocyte
       annotation: ${annotations.root}/${cancer.type}/ac.csv
 
-    - name: neural_precursor1_score
-      annotation: ${annotations.root}/${cancer.type}/npc1.csv
+    - name: neural_precursor
+      annotation: ${annotations.root}/${cancer.type}/npc.csv
 
-    - name: neural_precursor2_score
-      annotation: ${annotations.root}/${cancer.type}/npc2.csv
-
-    - name: oligodendrocytic_precursor_score
+    - name: oligodendrocytic_precursor
       annotation: ${annotations.root}/${cancer.type}/opc.csv
-
-    - name: G1S_score_paper
-      annotation: ${annotations.root}/${cancer.type}/g1s.csv
-
-    - name: G2M_score_paper
-      annotation: ${annotations.root}/${cancer.type}/g2m.csv
 
 unhealthy:
   - Malignant

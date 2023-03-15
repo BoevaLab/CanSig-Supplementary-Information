@@ -11,9 +11,6 @@ scoring:
     - name: Basal
       annotation: ${annotations.root}/${cancer.type}/basal.csv
 
-    - name: Cycling
-      annotation: ${annotations.root}/${cancer.type}/cycling.csv
-
     - name: TSK
       annotation: ${annotations.root}/${cancer.type}/TSK.csv
 

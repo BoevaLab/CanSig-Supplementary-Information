@@ -12,9 +12,6 @@ scoring:
 
     - name: CDH12
       annotation: ${annotations.root}/${cancer.type}/CDH12_Epithelial.csv
-    
-    - name: Cycling
-      annotation: ${annotations.root}/${cancer.type}/Cycling_Epithelial.csv
 
     - name: KRT6A
       annotation: ${annotations.root}/${cancer.type}/KRT6A_Epithelial.csv

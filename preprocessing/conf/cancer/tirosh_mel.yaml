@@ -13,9 +13,6 @@ scoring:
 
     - name: AXL
       annotation: ${annotations.root}/${cancer.type}/axl_program.csv
-    
-    - name: Cycling
-      annotation: ${annotations.root}/${cancer.type}/cell_cycle_melspecific.csv
 
     - name: MITF
       annotation: ${annotations.root}/${cancer.type}/mitf_program.csv

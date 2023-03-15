@@ -6,6 +6,14 @@ type: npc
 data:
   meta_data_path: /cluster/work/boeva/scRNAdata/raw/npc/metadata/metadata.csv
 
+scoring:
+  scores:
+    - name: ep_c1
+      annotation: ${annotations.root}/${cancer.type}/ep_c1.csv
+
+    - name: ep_c2
+      annotation: ${annotations.root}/${cancer.type}/ep_c2.csv
+
 unhealthy:
 
   - Epithelial cell
