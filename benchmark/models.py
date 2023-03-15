@@ -6,7 +6,6 @@ from timeit import default_timer as timer
 from typing import Tuple, Union
 
 import numpy as np
-import pyliger
 import scanpy as sc
 import scanpy.external as sce
 from anndata import AnnData
