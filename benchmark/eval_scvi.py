@@ -13,8 +13,8 @@ from hydra.core.config_store import ConfigStore
 from hydra_plugins.hydra_submitit_launcher.config import SlurmQueueConf
 from omegaconf import OmegaConf
 
-from benchmark.models import run_scvi, SCVIConfig
-from benchmark.utils import (get_gres, get_partition,
+from models import run_scvi, SCVIConfig
+from utils import (get_gres, get_partition,
                              hydra_run_sweep)
 
 _LOGGER = logging.getLogger(__name__)
