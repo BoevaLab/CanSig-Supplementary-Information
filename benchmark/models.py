@@ -5,12 +5,10 @@ from pathlib import Path
 from timeit import default_timer as timer
 from typing import Tuple, Union
 
-import bbknn
 import numpy as np
 import pyliger
 import scanpy as sc
 import scanpy.external as sce
-import scvi
 from anndata import AnnData
 from omegaconf import MISSING
 
@@ -206,6 +204,8 @@ class BBKNNConfig(ModelConfig):
 
 
 def run_bbknn(adata: AnnData, config: BBKNNConfig) -> AnnData:
+    import bbknn
+
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
     sc.pp.highly_variable_genes(adata, n_top_genes=config.n_top_genes, subset=True)
@@ -235,6 +235,8 @@ class SCVIConfig(ModelConfig):
 
 
 def run_scvi(adata: AnnData, config: SCVIConfig) -> AnnData:
+    import scvi
+
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
     sc.pp.highly_variable_genes(adata, n_top_genes=config.n_top_genes)
