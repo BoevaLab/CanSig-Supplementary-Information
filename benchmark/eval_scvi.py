@@ -12,8 +12,8 @@ from cansig.filesys import get_directory_name
 from hydra.core.config_store import ConfigStore
 from hydra_plugins.hydra_submitit_launcher.config import SlurmQueueConf
 from omegaconf import OmegaConf
-
-import models
+import scanpy as sc
+import scvi
 import utils
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,6 +41,66 @@ class Slurm(SlurmQueueConf):
     timeout_min: int = 720
     partition: str = field(default_factory=lambda: "${get_partition:${model.gpu}}")
     gres: Optional[str] = field(default_factory=lambda: "${get_gres:${model.gpu}}")
+
+@dataclass
+class ModelConfig:
+    name: str = MISSING
+    gpu: bool = False
+    malignant_only: bool = True
+    batch_key: str = "sample_id"
+    latent_key: str = "latent"
+    n_top_genes: int = 2000
+
+
+@dataclass
+class SCVIConfig(ModelConfig):
+    name: str = "scvi"
+    gpu: bool = True
+    n_latent: int = 10
+    n_hidden: int = 128
+    n_layers: int = 1
+    max_epochs: int = 400
+    cell_cycle: bool = False
+    log_counts: bool = False
+    pct_counts_mt: bool = False
+
+
+def run_scvi(adata: anndata.AnnData, config: SCVIConfig) -> anndata.AnnData:
+    import scvi
+
+    sc.pp.normalize_total(adata, target_sum=1e4)
+    sc.pp.log1p(adata)
+    sc.pp.highly_variable_genes(adata, n_top_genes=config.n_top_genes)
+    bdata = adata[:, adata.var["highly_variable"]].copy()
+
+    covariates = []
+    if config.cell_cycle:
+        covariates += ["S_score", "G2M_score"]
+
+    if config.log_counts:
+        covariates += ["log_counts"]
+
+    if config.pct_counts_mt:
+        covariates += ["pct_counts_mt"]
+
+    covariates = covariates or None
+
+    scvi.model.SCVI.setup_anndata(bdata, layer="counts", batch_key=config.batch_key,
+                                  continuous_covariate_keys=covariates)
+    model = scvi.model.SCVI(
+        bdata,
+        n_latent=config.n_latent,
+        n_hidden=config.n_hidden,
+        n_layers=config.n_layers,
+    )
+    model.train(
+        max_epochs=config.max_epochs,
+        # TODO: add this to cansig!
+        train_size=1.0,
+        plan_kwargs={"n_epochs_kl_warmup": config.max_epochs},
+    )
+    adata.obsm[config.latent_key] = model.get_latent_representation()
+    return adata
 
 
 def data_path(base_dir:str, cancer:str) -> str:
