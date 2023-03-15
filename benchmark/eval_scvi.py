@@ -11,12 +11,10 @@ import numpy as np
 from cansig.filesys import get_directory_name
 from hydra.core.config_store import ConfigStore
 from hydra_plugins.hydra_submitit_launcher.config import SlurmQueueConf
-from omegaconf import OmegaConf, MISSING
+from omegaconf import OmegaConf
 
-from models import run_scvi, SCVIConfig
-from utils import (get_gres, get_partition,
-                             hydra_run_sweep)
-
+import models
+import utils
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -32,9 +30,9 @@ class DataConfig:
 @dataclass
 class Config:
     data: DataConfig = DataConfig()
-    model: SCVIConfig = SCVIConfig()
+    model: models.SCVIConfig = models.SCVIConfig()
     results_path: str = "/cluster/work/boeva/scRNAdata/scvi_results"
-    hydra: Dict[str, Any] = field(default_factory=hydra_run_sweep)
+    hydra: Dict[str, Any] = field(default_factory=utils.hydra_run_sweep)
 
 
 @dataclass
@@ -60,8 +58,8 @@ def read_anndata(data_config: DataConfig) -> anndata.AnnData:
 
 
 OmegaConf.register_new_resolver("run_dir", get_directory_name)
-OmegaConf.register_new_resolver("get_gres", get_gres)
-OmegaConf.register_new_resolver("get_partition", get_partition)
+OmegaConf.register_new_resolver("get_gres", utils.get_gres)
+OmegaConf.register_new_resolver("get_partition", utils.get_partition)
 OmegaConf.register_new_resolver("data_path", data_path)
 
 
@@ -75,7 +73,7 @@ def main(cfg: Config) -> None:
     adata = read_anndata(data_config=cfg.data)
     n_clusters = sum(adata.obs.columns.str.endswith("_GT"))
     _LOGGER.info(f"Found {n_clusters} ground truth signatures.")
-    adata, _ = run_scvi(adata, cfg.model)
+    adata, _ = models.run_scvi(adata, cfg.model)
     cluster_config = cluster.LeidenNClusterConfig(clusters=n_clusters)
     clustering_algorithm = cluster.LeidenNCluster(cluster_config)
     labels = clustering_algorithm.fit_predict(adata.obs[cfg.model.latent_key])
