@@ -14,9 +14,29 @@ from hydra_plugins.hydra_submitit_launcher.config import SlurmQueueConf
 from omegaconf import OmegaConf
 import scanpy as sc
 import scvi
-import utils
 _LOGGER = logging.getLogger(__name__)
 
+def hydra_run_sweep():
+    RUN_SWEEP_DEFAULTS = {
+        "run": {"dir": "${results_path}/${data.cancer}/${run_dir:}"},
+        "sweep": {
+            "dir": "${results_path}",
+            "subdir": "${data.cancer}/${run_dir:}",
+        }
+    }
+    return RUN_SWEEP_DEFAULTS
+
+
+def get_partition(gpu: bool) -> str:
+    if gpu:
+        return "gpu"
+    return "compute"
+
+
+def get_gres(gpu: bool) -> Optional[str]:
+    if gpu:
+        return "gpu:rtx2080ti:1"
+    return None
 
 @dataclass
 class ModelConfig:
@@ -56,7 +76,7 @@ class Config:
     data: DataConfig = DataConfig()
     model: SCVIConfig = SCVIConfig()
     results_path: str = "/cluster/work/boeva/scRNAdata/scvi_results"
-    hydra: Dict[str, Any] = field(default_factory=utils.hydra_run_sweep)
+    hydra: Dict[str, Any] = field(default_factory=hydra_run_sweep)
 
 
 @dataclass
@@ -122,8 +142,8 @@ def read_anndata(data_config: DataConfig) -> anndata.AnnData:
 
 
 OmegaConf.register_new_resolver("run_dir", get_directory_name)
-OmegaConf.register_new_resolver("get_gres", utils.get_gres)
-OmegaConf.register_new_resolver("get_partition", utils.get_partition)
+OmegaConf.register_new_resolver("get_gres", get_gres)
+OmegaConf.register_new_resolver("get_partition", get_partition)
 OmegaConf.register_new_resolver("data_path", data_path)
 
 
