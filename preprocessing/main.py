@@ -46,6 +46,8 @@ def quality_control_smart_seq(adata:anndata.AnnData) -> anndata.AnnData:
     sc.pp.filter_genes(adata, min_cells=int(0.01 * adata.n_obs))
     _LOGGER.info(f"Finished qc with {adata.n_obs} cells and {adata.n_vars} genes.")
     return adata
+
+
 @hydra.main(config_path="conf", config_name="config", version_base="1.1")
 def main(cfg: DictConfig):
     mkdirs(cfg)

@@ -11,73 +11,24 @@ scoring:
   scores:
 
     - name: CEC
-      type: gene_scoring
-      gene_pool: full
       annotation: ${annotations.root}/${cancer.type}/CEC.csv
     
     - name: MEC
-      type: gene_scoring
-      gene_pool: full
       annotation: ${annotations.root}/${cancer.type}/MEC.csv
 
-    - name: PFA-sc6
-      type: gene_scoring
-      gene_pool: full
-      annotation: ${annotations.root}/${cancer.type}/PFA-sc6.csv
+    - name: PFA
+      annotation: ${annotations.root}/${cancer.type}/PFA.csv
 
-    - name: PFA-sc7
-      type: gene_scoring
-      gene_pool: full
-      annotation: ${annotations.root}/${cancer.type}/PFA-sc7.csv
-
-    - name: PFB
-      type: gene_scoring
-      gene_pool: full
-      annotation: ${annotations.root}/${cancer.type}/PFB.csv
-
-    - name: RELA-sc1
-      type: gene_scoring
-      gene_pool: full
-      annotation: ${annotations.root}/${cancer.type}/RELA-sc1.csv
-
-    - name: RELA-sc2
-      type: gene_scoring
-      gene_pool: full
-      annotation: ${annotations.root}/${cancer.type}/RELA-sc2.csv
-
-    - name: RELA-sc3
-      type: gene_scoring
-      gene_pool: full
-      annotation: ${annotations.root}/${cancer.type}/RELA-sc3.csv
-    
-    - name: RELA-sc4
-      type: gene_scoring
-      gene_pool: full
-      annotation: ${annotations.root}/${cancer.type}/RELA-sc4.csv
-    
-    - name: RELA-sc5
-      type: gene_scoring
-      gene_pool: full
-      annotation: ${annotations.root}/${cancer.type}/RELA-sc5.csv
+    - name: RELA
+      annotation: ${annotations.root}/${cancer.type}/RELA.csv
 
     - name: TEC
-      type: gene_scoring
-      gene_pool: full
       annotation: ${annotations.root}/${cancer.type}/TEC.csv
 
-    - name: UEC-1
-      type: gene_scoring
-      gene_pool: full
-      annotation: ${annotations.root}/${cancer.type}/UEC-1.csv
-
-    - name: UEC-2
-      type: gene_scoring
-      gene_pool: full
-      annotation: ${annotations.root}/${cancer.type}/UEC-2.csv
+    - name: UEC
+      annotation: ${annotations.root}/${cancer.type}/UEC.csv
 
     - name: YAP
-      type: gene_scoring
-      gene_pool: full
       annotation: ${annotations.root}/${cancer.type}/YAP.csv
     
 

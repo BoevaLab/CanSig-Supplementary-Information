@@ -24,13 +24,9 @@ scoring:
   cell_cycle: ${annotations.root}/cc_genes_2.csv
   apoptosis:
     name: apoptosis_score
-    type: gene_scoring
-    gene_pool: full
     annotation: ${annotations.root}/apoptosis_signature.csv
   oxphos:
     name: oxphos
-    type: gene_scoring
-    gene_pool: full
     annotation: ${annotations.root}/hallmark_oxphos.csv
   scores: []
 

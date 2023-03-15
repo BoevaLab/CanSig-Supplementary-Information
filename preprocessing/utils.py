@@ -60,8 +60,8 @@ def get_scoring_dict(cfg):
     _LOGGER.info("Generating scoring dict.")
     scoring_dict = {}
     for score in cfg.scores:
-        scoring_gene = pd.read_csv(score.annotation).iloc[:, 0].to_list()
-        scoring_dict[score.name] = scoring_gene
+        scoring_gene = pd.read_csv(score.annotation, index_col=0, header=None).index.to_list()
+        scoring_dict[score.name + "_GT"] = scoring_gene
 
     return scoring_dict
 
