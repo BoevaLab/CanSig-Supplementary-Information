@@ -95,7 +95,7 @@ def main(cfg: Config) -> None:
     # *** Signature saving and scoring ***
     # by default, all de novo found signatures are saved as the result of the differential gene expression
     # and the signatures are scored an all cells using n_genes_sig top positively diff expressed genes
-    output_dir = fs.PostprocessingDir(path=".")
+    output_dir = fs.PostprocessingDir(path="../eval_metasigs")
     output_dir.make_sig_dir()
     gsea.save_signatures(diff_genes=gene_ranks, res_dir=output_dir.signature_output)
 
