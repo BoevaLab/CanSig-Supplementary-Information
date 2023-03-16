@@ -21,10 +21,10 @@ _LOGGER = logging.getLogger(__name__)
 
 def hydra_run_sweep():
     RUN_SWEEP_DEFAULTS = {
-        "run": {"dir": "${results_path}/${data.cancer}/${run_dir:}"},
+        "run": {"dir": "${results_path}/${model.name}/${data.cancer}/${run_dir:}"},
         "sweep": {
             "dir": "${results_path}",
-            "subdir": "${data.cancer}/${run_dir:}",
+            "subdir": "${model.name}/${data.cancer}/${run_dir:}",
         }
     }
     return RUN_SWEEP_DEFAULTS
@@ -172,9 +172,9 @@ def main(cfg: Config) -> None:
         n_clusters = sum(adata.obs.columns.str.endswith("_GT"))
         _LOGGER.info(f"Found {n_clusters} ground truth signatures.")
 
-        if isinstance(cfg.model, SCVIConfig):
+        if cfg.model.name=="scvi":
             adata = run_scvi(adata, cfg.model)
-        elif isinstance(cfg.model, UnintegratedConfig):
+        elif cfg.model.name =="unintegrated":
             adata = run_unintegrated(adata, cfg.model)
         else:
             raise NotImplementedError(f"{cfg.model.name} is not implemented.")
