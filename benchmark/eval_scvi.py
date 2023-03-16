@@ -51,6 +51,17 @@ class ModelConfig:
     latent_key: str = "latent"
     n_top_genes: int = 2000
 
+@dataclass
+class UnintegratedConfig(ModelConfig):
+    name: str = "unintegrated"
+
+
+def run_unintegrated(adata: anndata.AnnData, config: UnintegratedConfig) -> anndata.AnnData:
+    sc.pp.normalize_total(adata, target_sum=1e4)
+    sc.pp.log1p(adata)
+
+    adata.obsm[config.latent_key] = sc.tl.pca(adata.X, return_info=False)
+    return adata
 
 @dataclass
 class SCVIConfig(ModelConfig):
@@ -77,8 +88,8 @@ class DataConfig:
 
 @dataclass
 class Config:
+    model: ModelConfig
     data: DataConfig = DataConfig()
-    model: SCVIConfig = SCVIConfig()
     results_path: str = "/cluster/work/boeva/scRNAdata/scvi_results"
     hydra: Dict[str, Any] = field(default_factory=hydra_run_sweep)
 
@@ -151,7 +162,8 @@ OmegaConf.register_new_resolver("data_path", data_path)
 cs = ConfigStore.instance()
 cs.store(name="config", node=Config)
 cs.store(group="hydra/launcher", name="slurm", node=Slurm, provider="submitit_launcher")
-
+cs.store(group="model", name="scvi", node=SCVIConfig)
+cs.store(group="model", name="unintegrated", node=UnintegratedConfig)
 
 @hydra.main(config_name="config", config_path=None, version_base="1.1")
 def main(cfg: Config) -> None:
@@ -159,15 +171,18 @@ def main(cfg: Config) -> None:
         adata = read_anndata(data_config=cfg.data)
         n_clusters = sum(adata.obs.columns.str.endswith("_GT"))
         _LOGGER.info(f"Found {n_clusters} ground truth signatures.")
-        adata = run_scvi(adata, cfg.model)
+
+        if cfg.model.name == "scvi":
+            adata = run_scvi(adata, cfg.model)
+        elif cfg.model.name == "unintegrated":
+            adata = run_unintegrated(adata, cfg.model)
+        else:
+            raise NotImplementedError(f"{cfg.model.name} is not implemented.")
         _LOGGER.info("Running clustering.")
         cluster_config = cluster.LeidenNClusterConfig(clusters=n_clusters)
         clustering_algorithm = cluster.LeidenNCluster(cluster_config)
         labels = clustering_algorithm.fit_predict(adata.obsm[cfg.model.latent_key])
 
-        # Read the anndata and add the cluster labels
-        # TODO(Pawel, Florian, Josephine): Apply preprocessing, e.g., selecting HVGs?
-        #  Or maybe this should be in the GEX object?
         adata = anndata.read_h5ad(cfg.data.data_path)
         cluster_col = "new-cluster-column"
         adata.obs[cluster_col] = pd.Series(labels, dtype="category", index=adata.obs_names)
