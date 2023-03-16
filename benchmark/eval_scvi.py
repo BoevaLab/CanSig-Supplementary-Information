@@ -9,6 +9,7 @@ import cansig.filesys as fs  # pytype: disable=import-error
 import cansig.gsea as gsea  # pytype: disable=import-error
 import hydra
 import numpy as np
+import pandas as pd
 import scanpy as sc
 from cansig.filesys import get_directory_name
 from hydra.core.config_store import ConfigStore
@@ -169,7 +170,7 @@ def main(cfg: Config) -> None:
         #  Or maybe this should be in the GEX object?
         adata = anndata.read_h5ad(cfg.data.data_path)
         cluster_col = "new-cluster-column"
-        adata.obs[cluster_col] = labels
+        adata.obs[cluster_col] = pd.Series(labels, dtype="category", index=adata.obs_names)
 
         # Find the signatures
         _LOGGER.info("Running DE-analysis.")
