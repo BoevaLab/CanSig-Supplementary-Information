@@ -162,7 +162,7 @@ def main(cfg: Config) -> None:
         _LOGGER.info("Running clustering.")
         cluster_config = cluster.LeidenNClusterConfig(clusters=n_clusters)
         clustering_algorithm = cluster.LeidenNCluster(cluster_config)
-        labels = clustering_algorithm.fit_predict(adata.obs[cfg.model.latent_key])
+        labels = clustering_algorithm.fit_predict(adata.obsm[cfg.model.latent_key])
 
         # Read the anndata and add the cluster labels
         # TODO(Pawel, Florian, Josephine): Apply preprocessing, e.g., selecting HVGs?
