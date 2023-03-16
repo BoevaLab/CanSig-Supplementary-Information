@@ -184,7 +184,7 @@ def main(cfg: Config) -> None:
         output_dir.make_sig_dir()
         gsea.save_signatures(diff_genes=gene_ranks, res_dir=output_dir.signature_output)
     except Exception as e:
-        _LOGGER.critical(e)
+        _LOGGER.exception(e)
 
 
 if __name__ == "__main__":
