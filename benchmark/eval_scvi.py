@@ -158,7 +158,7 @@ def main(cfg: Config) -> None:
         adata = read_anndata(data_config=cfg.data)
         n_clusters = sum(adata.obs.columns.str.endswith("_GT"))
         _LOGGER.info(f"Found {n_clusters} ground truth signatures.")
-        adata, _ = run_scvi(adata, cfg.model)
+        adata = run_scvi(adata, cfg.model)
         _LOGGER.info("Running clustering.")
         cluster_config = cluster.LeidenNClusterConfig(clusters=n_clusters)
         clustering_algorithm = cluster.LeidenNCluster(cluster_config)
