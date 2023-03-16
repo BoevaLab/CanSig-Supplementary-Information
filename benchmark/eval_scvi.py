@@ -2,19 +2,21 @@ import logging
 import pathlib as pl
 from dataclasses import dataclass, field, MISSING
 from typing import Dict, Any, Optional
+
+import anndata
 import cansig.cluster.api as cluster  # pytype: disable=import-error
 import cansig.filesys as fs  # pytype: disable=import-error
 import cansig.gsea as gsea  # pytype: disable=import-error
-import anndata
 import hydra
 import numpy as np
+import scanpy as sc
 from cansig.filesys import get_directory_name
 from hydra.core.config_store import ConfigStore
 from hydra_plugins.hydra_submitit_launcher.config import SlurmQueueConf
 from omegaconf import OmegaConf
-import scanpy as sc
-import scvi
+
 _LOGGER = logging.getLogger(__name__)
+
 
 def hydra_run_sweep():
     RUN_SWEEP_DEFAULTS = {
@@ -37,6 +39,7 @@ def get_gres(gpu: bool) -> Optional[str]:
     if gpu:
         return "gpu:rtx2080ti:1"
     return None
+
 
 @dataclass
 class ModelConfig:
@@ -61,12 +64,12 @@ class SCVIConfig(ModelConfig):
     pct_counts_mt: bool = False
 
 
-
 @dataclass
 class DataConfig:
-    cancer: str = "npc" #TODO: make this optinal.
+    cancer: str = "npc"  # TODO: make this optinal.
     base_dir: str = "/cluster/work/boeva/scRNAdata/preprocessed"
-    data_path: str = field(default_factory=lambda: "${data_path:${data.base_dir}, ${data.cancer}}")
+    data_path: str = field(
+        default_factory=lambda: "${data_path:${data.base_dir}, ${data.cancer}}")
     malignant_key: str = "malignant_key"
     malignant_cat: str = "malignant"
 
@@ -85,8 +88,6 @@ class Slurm(SlurmQueueConf):
     timeout_min: int = 720
     partition: str = field(default_factory=lambda: "${get_partition:${model.gpu}}")
     gres: Optional[str] = field(default_factory=lambda: "${get_gres:${model.gpu}}")
-
-
 
 
 def run_scvi(adata: anndata.AnnData, config: SCVIConfig) -> anndata.AnnData:
@@ -127,7 +128,7 @@ def run_scvi(adata: anndata.AnnData, config: SCVIConfig) -> anndata.AnnData:
     return adata
 
 
-def data_path(base_dir:str, cancer:str) -> str:
+def data_path(base_dir: str, cancer: str) -> str:
     data_path = pl.Path(base_dir).joinpath(cancer).joinpath("_LAST")
     return str(data_path)
 
@@ -146,7 +147,6 @@ OmegaConf.register_new_resolver("get_gres", get_gres)
 OmegaConf.register_new_resolver("get_partition", get_partition)
 OmegaConf.register_new_resolver("data_path", data_path)
 
-
 cs = ConfigStore.instance()
 cs.store(name="config", node=Config)
 cs.store(group="hydra/launcher", name="slurm", node=Slurm, provider="submitit_launcher")
@@ -154,32 +154,37 @@ cs.store(group="hydra/launcher", name="slurm", node=Slurm, provider="submitit_la
 
 @hydra.main(config_name="config", config_path=None, version_base="1.1")
 def main(cfg: Config) -> None:
-    adata = read_anndata(data_config=cfg.data)
-    n_clusters = sum(adata.obs.columns.str.endswith("_GT"))
-    _LOGGER.info(f"Found {n_clusters} ground truth signatures.")
-    adata, _ = run_scvi(adata, cfg.model)
-    cluster_config = cluster.LeidenNClusterConfig(clusters=n_clusters)
-    clustering_algorithm = cluster.LeidenNCluster(cluster_config)
-    labels = clustering_algorithm.fit_predict(adata.obs[cfg.model.latent_key])
+    try:
+        adata = read_anndata(data_config=cfg.data)
+        n_clusters = sum(adata.obs.columns.str.endswith("_GT"))
+        _LOGGER.info(f"Found {n_clusters} ground truth signatures.")
+        adata, _ = run_scvi(adata, cfg.model)
+        _LOGGER.info("Running clustering.")
+        cluster_config = cluster.LeidenNClusterConfig(clusters=n_clusters)
+        clustering_algorithm = cluster.LeidenNCluster(cluster_config)
+        labels = clustering_algorithm.fit_predict(adata.obs[cfg.model.latent_key])
 
+        # Read the anndata and add the cluster labels
+        # TODO(Pawel, Florian, Josephine): Apply preprocessing, e.g., selecting HVGs?
+        #  Or maybe this should be in the GEX object?
+        adata = anndata.read_h5ad(cfg.data.data_path)
+        cluster_col = "new-cluster-column"
+        adata.obs[cluster_col] = labels
 
-    # Read the anndata and add the cluster labels
-    # TODO(Pawel, Florian, Josephine): Apply preprocessing, e.g., selecting HVGs?
-    #  Or maybe this should be in the GEX object?
-    adata = anndata.read_h5ad(cfg.data.data_path)
-    cluster_col = "new-cluster-column"
-    adata.obs[cluster_col] = labels
+        # Find the signatures
+        _LOGGER.info("Running DE-analysis.")
+        gex_object = gsea.GeneExpressionAnalysis(cluster_name=cluster_col)
+        gene_ranks = gex_object.diff_gex(adata)
 
-    # Find the signatures
-    gex_object = gsea.GeneExpressionAnalysis(cluster_name=cluster_col)
-    gene_ranks = gex_object.diff_gex(adata)
-
-    # *** Signature saving and scoring ***
-    # by default, all de novo found signatures are saved as the result of the differential gene expression
-    # and the signatures are scored an all cells using n_genes_sig top positively diff expressed genes
-    output_dir = fs.PostprocessingDir(path="../eval_metasigs")
-    output_dir.make_sig_dir()
-    gsea.save_signatures(diff_genes=gene_ranks, res_dir=output_dir.signature_output)
+        # *** Signature saving and scoring ***
+        # by default, all de novo found signatures are saved as the result of the differential gene expression
+        # and the signatures are scored an all cells using n_genes_sig top positively diff expressed genes
+        _LOGGER.info("Saving signatures.")
+        output_dir = fs.PostprocessingDir(path=".")
+        output_dir.make_sig_dir()
+        gsea.save_signatures(diff_genes=gene_ranks, res_dir=output_dir.signature_output)
+    except Exception as e:
+        _LOGGER.critical(e)
 
 
 if __name__ == "__main__":
