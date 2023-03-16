@@ -172,9 +172,9 @@ def main(cfg: Config) -> None:
         n_clusters = sum(adata.obs.columns.str.endswith("_GT"))
         _LOGGER.info(f"Found {n_clusters} ground truth signatures.")
 
-        if cfg.model.name == "scvi":
+        if isinstance(cfg.model, SCVIConfig):
             adata = run_scvi(adata, cfg.model)
-        elif cfg.model.name == "unintegrated":
+        elif isinstance(cfg.model, UnintegratedConfig):
             adata = run_unintegrated(adata, cfg.model)
         else:
             raise NotImplementedError(f"{cfg.model.name} is not implemented.")
