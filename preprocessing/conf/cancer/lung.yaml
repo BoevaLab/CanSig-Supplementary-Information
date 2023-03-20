@@ -14,7 +14,6 @@ qc:
   min_genes: 700
 
 scoring:
-  n_hvg: 2000
   scores:
 # List of genes specific to malignant and normal epithelial cells
 ## Malignant cells

@@ -4,6 +4,10 @@ type: scc_red
 data:
         type: meta_data
         meta_data_path: /cluster/dataset/boeva/scRNAdata/raw/SCC/metadata/metadata.csv
+        excluded_samples:
+          - P3
+          - P4
+          - P8
 
 scoring:
   scores:

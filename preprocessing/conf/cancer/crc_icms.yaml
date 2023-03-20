@@ -8,7 +8,6 @@ data:
 
 
 scoring:
-  n_hvg: 2000
   scores:
 
     - name: iCMS2
