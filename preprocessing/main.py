@@ -54,7 +54,7 @@ def main(cfg: DictConfig):
     adatas = []
     samples = get_samples(cfg.cancer.data)
     for sample in samples:
-        if sample in cfg.data.excluded_samples:
+        if sample in cfg.cancer.data.excluded_samples:
             continue
         adata = load_adata(sample_info=sample)
         adatas.append(adata)
