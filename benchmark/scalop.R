@@ -68,7 +68,7 @@ print("Writing metasignatures.")
 dir.create(results_dir, recursive = TRUE)
 for(i in 1:length(metaprograms)){
     df <- as.data.frame(metaprograms[[i]])
-    name <-paste0("metaprogram", i)
+    name <-paste0("/metaprogram", i)
     colnames(df) <- name
     write.table(metaprograms[[i]], paste0(results_dir, name, ".csv"), row.names = FALSE, col.names=FALSE)
 }
