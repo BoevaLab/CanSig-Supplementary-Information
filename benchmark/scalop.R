@@ -35,7 +35,7 @@ unlist(., recursive = F)
 df = read.csv("/cluster/work/boeva/scRNAdata/annotations/cc_genes_2.csv")
 cc_genes = gsub("\\s", "", c(df[, 1], df[, 2]))
 cc_genes=cc_genes[cc_genes!=""]
-
+print("Removing high cc signatures")
 no_cc_programs = c()
 for(program_name in names(tumour_programs)){
     if(length(intersect(tumour_programs[[program_name]], cc_genes))<25){
@@ -60,7 +60,7 @@ mp_freqs = sapply(clust_4, function(k) sort(table(unlist(noncc_programs[k])),dec
 metaprograms = sapply(mp_freqs, function(tab) head(names(tab)[tab >= 2], 200), simplify = F)
 names(metaprograms) = sprintf("metaprogram%d", 1:n_cluster)
 
-
+print("Writing metasignatures.")
 dir.create(results_dir, recursive = TRUE)
 for(i in 1:length(metaprograms)){
     df <- as.data.frame(metaprograms[[i]])
