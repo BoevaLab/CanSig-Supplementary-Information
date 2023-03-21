@@ -16,8 +16,11 @@ for(sample_id in unique(ad$obs[["sample_id"]])){
     matrix = t(as.matrix(matrix))
     matrix = apply(matrix, 2, function(x) x/sum(as.numeric(x)) * 10^4)
     matrix = log2(matrix + 1)
-    if(ncols(matrix)<50){next}
     res = scalop::programs(scalop::rowcenter(matrix))
+    if(is.null(res){
+        print(paste0("No differentially expresed groups found for: ", sample_id))
+        next
+    }
     prog.obj = c(prog.obj, setNames(list(res),sample_id))
 }
 
