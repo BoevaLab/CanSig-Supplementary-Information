@@ -50,7 +50,7 @@ noncc.matrix = scalop::hca_reorder(noncc.matrix)
 # 5: Retrieve non-cycling program clusters
 clust_4 = scalop::hca_groups(noncc.matrix,
 cor.method="none",
-k=n_cluster,
+k=n_clusters,
 min.size=0,
 max.size=1)
 
@@ -58,7 +58,7 @@ max.size=1)
 # Sort by frequency across programs in cluster (>= 15)
 mp_freqs = sapply(clust_4, function(k) sort(table(unlist(noncc_programs[k])),decreasing = T),simplify = F)
 metaprograms = sapply(mp_freqs, function(tab) head(names(tab)[tab >= 2], 200), simplify = F)
-names(metaprograms) = sprintf("metaprogram%d", 1:n_cluster)
+names(metaprograms) = sprintf("metaprogram%d", 1:n_clusters)
 
 print("Writing metasignatures.")
 dir.create(results_dir, recursive = TRUE)
