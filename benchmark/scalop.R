@@ -15,6 +15,7 @@ for(sample_id in unique(ad$obs[["sample_id"]])){
     matrix = ad[ad$obs["sample_id"]==sample_id]$X
     matrix = t(as.matrix(matrix))
     matrix = apply(matrix, 2, function(x) x/sum(as.numeric(x)) * 10^4)
+    matrix = log2(matrix + 1)
     if(ncols(matrix)<50){next}
     res = scalop::programs(scalop::rowcenter(matrix))
     prog.obj = c(prog.obj, setNames(list(res),sample_id))
