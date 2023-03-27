@@ -8,15 +8,22 @@ n_clusters <- strtoi(args[2])
 results_dir <- args[3]
 
 ad <- anndata::read_h5ad(data_path)
+matrix <- ad$X
+matrix <- t(as.matrix(matrix))
+matrix_tpm <- apply(matrix, 2, function(x) x/sum(as.numeric(x)) * 10^6)
+idx <- (log2(rowMeans(matrix_tpm)+1) > 4.)
+matrix_tpm <- matrix_tpm[idx,]
+matrix_log_tpm <- log2((matrix_tpm/10.)+1)
+matrix_log_tpm <- scalop::rowcenter(matrix_log_tpm)
+matrix_log_tpm[matrix_log_tpm < 0.] <- 0.
+
 prog.obj = list()
 for(sample_id in unique(ad$obs[["sample_id"]])){
     print(sample_id)
     flush.console()
-    matrix = ad[ad$obs["sample_id"]==sample_id]$X
-    matrix = t(as.matrix(matrix))
-    matrix = apply(matrix, 2, function(x) x/sum(as.numeric(x)) * 10^4)
-    matrix = log2(matrix + 1)
-    res = scalop::programs(scalop::rowcenter(matrix))
+    idx = ad$obs["sample_id"]==sample_id
+    input_matrix = matrix_log_tpm[, idx]
+    res = scalop::programs(input_matrix)
     if(is.null(res)){
         print(paste0("No differentially expresed groups found for: ", sample_id))
         next
@@ -40,18 +47,26 @@ df = read.csv("/cluster/work/boeva/scRNAdata/annotations/cc_genes_2.csv")
 cc_genes = gsub("\\s", "", c(df[, 1], df[, 2]))
 cc_genes=cc_genes[cc_genes!=""]
 print("Removing high cc signatures")
-no_cc_programs = c()
-for(program_name in names(tumour_programs)){
-    if(length(intersect(tumour_programs[[program_name]], cc_genes))<25){
-        no_cc_programs = append(no_cc_programs, program_name)
-    }
+
+n_cc_genes = list()
+for(name in names(metaprograms)){
+    n_cc_genes[[name]] = length(intersect(metaprograms[[name]], cc_genes))
 }
 
-noncc_programs = tumour_programs[no_cc_programs]
-noncc.matrix = Jaccard(noncc_programs)
-noncc.matrix = scalop::hca_reorder(noncc.matrix)
+if(any(n_cc_genes > 0.25 * lengths(metaprograms))){
+    noncc_cluster_names <- names(which.min(n_cc_genes))
+    print("Found a meta-signature associated with cell cylce")
+    noncc_program_names = clust_2[[noncc_cluster_names]]
+}else{
+    print("No meta-signature associated with cell cycle found. Retaining all sigantures.")
+    noncc_program_names = names(tumour_programs)
+}
 
-# 5: Retrieve non-cycling program clusters
+
+noncc_programs = tumour_programs[noncc_program_names]
+noncc.matrix = Jaccard(noncc_programs)
+
+
 clust_4 = scalop::hca_groups(noncc.matrix,
 cor.method="none",
 k=n_clusters,
